@@ -230,12 +230,41 @@ int proc_instr() {
 	} else if (strcmp(token, "JSR") == 0) { // JSR r1
 		out_add(0x6570); // MOV PC, R5
 		out_add(0x7505); // ADI 5,  R5
-		out_add(0x4650); // STO R5, SP
+		out_add(0x4560); // STO R5, SP
 		out_add(0x7601); // ADI 1,  SP
 
 		// MOV r1, PC
 		result = 0x6700;
 		result |= get_reg() << 8;
+		out_add(result);
+	} else if (strcmp(token, "PSH") == 0) { // PSH r0 
+		result = 0x4060;
+
+		result |= get_reg() << 8;
+
+		out_add(result); // STO r0, SP
+		out_add(0x7601); // ADI 1,  SP
+	} else if (strcmp(token, "POP") == 0) { // POP r0 
+		out_add(0x76FF); // ADI -1, SP
+
+		result = 0x5060;
+
+		result |= get_reg() << 8;
+
+		out_add(result); // LOA SP, r0
+		
+	} else if (strcmp(token, "JGT") == 0) { // JGT r0, r1, r2
+		// If r0 > r1, goto r2 
+		
+		// SKL r0, r1
+		result = 0x8000;
+		result |= get_reg() << 8;
+		result |= get_reg() << 4;
+		out_add(result);
+		
+		// MOV r2, PC
+		result = 0x6700;
+		result |= get_reg() << 4;
 		out_add(result);
 	}
 

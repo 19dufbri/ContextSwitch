@@ -16,3 +16,6 @@ IOR		32,		S0
 IOW		S3,		34
 JMP		R6
 JSR		S3
+PSH		S2
+POP		R7
+JGT		R2,		S1,		R1
