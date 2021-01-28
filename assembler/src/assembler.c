@@ -88,6 +88,8 @@ int main(int argc, char *argv[]) {
 
 	free_memory();
 
+	printf("Assembly Successful\n");
+
 	exit(0);
 }
 
@@ -299,7 +301,6 @@ int16_t next_short() {
 		return result & 0xFFFF;
 	} else {
 		// Referencing a label
-		printf("Found label ref: %s\n", token);
 		Label_t *n_label = malloc(sizeof(Label_t));	// Create label entry
 		n_label->name = token;
 		n_label->addr = linked_list_len(output); 	// Address is how many insts before this
