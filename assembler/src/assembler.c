@@ -50,8 +50,8 @@ int main(int argc, char *argv[]) {
 	int i = 0;
 	Label_t *c_def;
 	while (inst != NULL) {
-		if (c_ref->addr == i) {
-			// Low Byte
+		if (c_ref != NULL && c_ref->addr == i) {
+			// Found Reference
 
 			// Find associated definition
 			linked_list_iter_rewind(label_def);
@@ -67,11 +67,9 @@ int main(int argc, char *argv[]) {
 			}
 
 			// Update associated address
-			*inst |= c_def->addr & 0xFF;
+			*inst |= (c_def->addr & c_ref->mask) >> c_ref->shft;
 
-		} else if (c_ref->addr == i+1) {
-			// Low Byte
-			*inst |= c_def->addr >> 8;
+			c_ref = linked_list_iter_next(label_ref);
 		}
 
 		// Move instruction to final list
@@ -93,23 +91,6 @@ int main(int argc, char *argv[]) {
 	exit(0);
 }
 
-char *keywords[] = {
-						"ADD",
-						"SUB",
-						"JMP",
-						"JSR",
-						"LDI",
-						"LIL",
-						"LIH",
-						"SIE",
-						"SNE",
-						"REI",
-						"MOV",
-						"STO",
-						"LOA",
-						"RET"
-					};
-
 // Generate the instruction for each line of the input
 int proc_instr() {
 	uint16_t result;
@@ -117,91 +98,148 @@ int proc_instr() {
 	if (token == NULL) {
 		return 1; // EOF, expected exit
 	}
-	if (strcmp(token, "ADD") == 0) {		// ADD r0 = r1 + r2
-		result = 0x0000;
-		result |= get_all_regs();
-		out_add(result);
-	} else if (strcmp(token, "SUB") == 0) {	// SUB r0 = r1 - r2
-		result = 0x1000;
-		result |= get_all_regs();
-		out_add(result);
-	} else if (strcmp(token, "LIL") == 0) {	// Load Imm Low r0[7 .. 0] = imm
-		result = 0x2000;
-		result |= next_byte();
-		result |= get_reg() << 8;
-		out_add(result);
-	} else if (strcmp(token, "LIH") == 0) {	// Load Imm Low r0[15 .. 7] = imm
-		result = 0x3000;
-		result |= next_byte();
-		result |= get_reg() << 8;
-		out_add(result);
-	} else if (strcmp(token, "LDI") == 0) { // Psuedo instruction, LIL & LIH
-		uint16_t imm = next_short();
-		uint16_t reg = get_reg() << 8;
-		
-		result = 0x2000;
-		result |= reg;
-		result |= imm & 0xFF;
-		out_add(result);
 
+	// "Real" Instructions
+	if (strcmp(token, "ADD") == 0) {		// ADD r1, r2, r0
+		result = 0x0000;
+		result |= get_reg() << 4;	// r1
+		result |= get_reg();		// r2
+		result |= get_reg() << 8;	// r0
+		out_add(result);
+	} else if (strcmp(token, "SUB") == 0) {	// SUB r1, r2, r0
+		result = 0x1000;
+		result |= get_reg() << 4;	// r1
+		result |= get_reg();		// r2
+		result |= get_reg() << 8;	// r0
+		out_add(result);
+	} else if (strcmp(token, "LIL") == 0) {	// LIL i,  r0
+		result = 0x2000;
+
+		Parse_t *t = next_num_or_label();
+		if (t->type = LABEL) {
+			add_label_ref(linked_list_len(output), t->value.name, 0xFF, 0);
+		} else {
+			result |= t->value.number & 0xFF;
+		}
+		free(t);
+
+		result |= get_reg() << 8;
+		out_add(result);
+	} else if (strcmp(token, "LIH") == 0) {	// LIH i,  r0
 		result = 0x3000;
-		result |= reg;
-		result |= imm >> 8;
+
+		Parse_t *t = next_num_or_label();
+		if (t->type = LABEL) {
+			add_label_ref(linked_list_len(output), t->value.name, 0xFF, 8);
+		} else {
+			result |= (t->value.number >> 8) & 0xFF;
+		}
+		free(t);
+
+		result |= get_reg() << 8;
 		out_add(result);
-	} else if (strcmp(token, "JPR") == 0) { // JumP Register
-		result = 0x8000;
-		result |= get_reg() << 4;
-		out_add(result);
-	} else if (strcmp(token, "JSR") == 0) { // Jump Subroutine Immidiate
-		result = 0x8100;
-		result |= get_reg() << 4;
-		out_add(result);
-	} else if (strcmp(token, "SEQ") == 0) { // Skip EQual
-		result = 0x9000;
-		result |= get_reg() << 4;
-		result |= get_reg();
-		out_add(result);
-	} else if (strcmp(token, "SNE") == 0) { // Skip if Not Equal
-		result = 0x9100;
-		result |= get_reg() << 4;
-		result |= get_reg();
-		out_add(result);
-	} else if (strcmp(token, "REI") == 0) { // REturn from Interupt
-		result = 0xA100;
-		out_add(result);
-	} else if (strcmp(token, "MOV") == 0) { // MOVe r0 = r1
-		result = 0x7000;
+	} else if (strcmp(token, "STO") == 0) { // STO r0, r1
+		result = 0x4000;
 		result |= get_reg() << 8;
 		result |= get_reg() << 4;
 		out_add(result);
-	} else if (strcmp(token, "STR") == 0) { // STore at Register
-		result = 0x4000;
+	} else if (strcmp(token, "LOA") == 0) { // LOA r1, r0
+		result = 0x5000;
 		result |= get_reg() << 4;
-		result |= get_reg();
+		result |= get_reg() << 8;
 		out_add(result);
-	} else if (strcmp(token, "LDR") == 0) { // LoaD at Register
-		result = 0x4100;
+	} else if (strcmp(token, "MOV") == 0) { // MOV r1, r0
+		result = 0x6000;
 		result |= get_reg() << 4;
-		result |= get_reg();
+		result |= get_reg() << 8;
 		out_add(result);
-	} else if (strcmp(token, "RET") == 0) { // RETurn from subroutine
+	} else if (strcmp(token, "ADI") == 0) { // ADI i,  r0
+		result = 0x7000;
+
+		Parse_t *t = next_num_or_label();
+		if (t->type = LABEL) {
+			add_label_ref(linked_list_len(output), t->value.name, 0xFF, 0);
+		} else {
+			result |= t->value.number & 0xFF;
+		}
+		free(t);
+
+		result |= get_reg() << 8;
+		out_add(result);
+	} else if (strcmp(token, "SKL") == 0) { // SKL r0, r1
+		result = 0x8000;
+		result |= get_reg() << 8;
+		result |= get_reg() << 4;
+		out_add(result);
+	} else if (strcmp(token, "INT") == 0) { // INT
+		result = 0x9000;
+		out_add(result);
+	} else if (strcmp(token, "EIN") == 0) { // EIN
 		result = 0xA000;
 		out_add(result);
-	} else if (strcmp(token, "INT") == 0) { // INTerupt the processor
-		result = 0xD000;
+	} else if (strcmp(token, "IOR") == 0) { // IOR i, r0
+		result = 0xB000;
+
+		Parse_t *t = next_num_or_label();
+		if (t->type = LABEL) {
+			add_label_ref(linked_list_len(output), t->value.name, 0xFF, 0);
+		} else {
+			result |= t->value.number & 0xFF;
+		}
+		free(t);
+
+		result |= get_reg() << 8;
 		out_add(result);
-	} else if (strcmp(token, "RDK") == 0) { // ReaD the Keyboard
-		result = 0xE000;
+	} else if (strcmp(token, "IOW") == 0) { // IOW r0, i
+		result = 0xC000;
+		result |= get_reg() << 8;
+
+		Parse_t *t = next_num_or_label();
+		if (t->type = LABEL) {
+			add_label_ref(linked_list_len(output), t->value.name, 0xFF, 0);
+		} else {
+			result |= t->value.number & 0xFF;
+		}
+		free(t);
+
+		out_add(result);
+	} 
+
+	// Pseudo-Instructions
+	  else if (strcmp(token, "LIR") == 0) { // LIR ii, r0
+		result = 0x2000;
+
+		Parse_t *t = next_num_or_label();
+		
+		result |= get_reg() << 8;
+
+		if (t->type = LABEL) {
+			add_label_ref(linked_list_len(output), t->value.name, 0xFF, 0);
+			add_label_ref(linked_list_len(output)+1, t->value.name, 0xFF, 8);
+			out_add(result);
+			out_add(result | 0x1000);
+		} else {
+			out_add(result | (t->value.number & 0xFF));
+			out_add(result | 0x1000 | ((t->value.number & 0xFF) >> 8));
+		}
+		free(t);
+	} else if (strcmp(token, "JMP") == 0) { // JMP r1
+		result = 0x6700;
 		result |= get_reg() << 4;
 		out_add(result);
-	} else if (strcmp(token, "WRS") == 0) { // WRite to the Screen
-		result = 0xE100;
-		result |= get_reg() << 4;
+	} else if (strcmp(token, "JSR") == 0) { // JSR r1
+		out_add(0x6570); // MOV PC, R5
+		out_add(0x7505); // ADI 5,  R5
+		out_add(0x4650); // STO R5, SP
+		out_add(0x7601); // ADI 1,  SP
+
+		// MOV r1, PC
+		result = 0x6700;
+		result |= get_reg() << 8;
 		out_add(result);
-	} else if (strcmp(token, "HLT") == 0) { // HaLT the processor
-		result = 0xF000;
-		out_add(result);
-	} else if (token[strlen(token)-1] == ':') {	// Label Definitions
+	}
+
+	else if (token[strlen(token)-1] == ':') {	// Label Definitions
 		token[strlen(token)-1] = '\0';				// Chop off colon
 
 		Label_t *n_label = malloc(sizeof(Label_t));	// Create label entry
@@ -216,15 +254,6 @@ int proc_instr() {
 	return 0;
 }
 
-// Get all the registers for ALU instructions
-uint16_t get_all_regs() {
-	uint16_t result = 0x0000;
-	result |= get_reg() << 8;
-	result |= get_reg() << 4;
-	result |= get_reg();
-	return result;
-}
-
 // Get Single Register
 uint8_t get_reg() {
 	uint8_t result = 0x00;
@@ -236,6 +265,7 @@ uint8_t get_reg() {
 			result |= 0x08;
 			break;
 		default:
+			fprintf(stderr, " >> %s <<\n", token);
 			syntax_error("Unknown Register");
 			break;
 	}
@@ -248,19 +278,10 @@ uint8_t get_reg() {
 		case '5':
 		case '6':
 		case '7':
-		case '8':
-		case '9':
 			result |= token[1] - '0';
 			break;
-		case 'A':
-		case 'B':
-		case 'C':
-		case 'D':
-		case 'E':
-		case 'F':
-			result |= token[1] - 'A' + 0x0A;
-			break;
 		default:
+			fprintf(stderr, " >> %s <<\n", token);
 			syntax_error("Unknown Register");
 			break;
 	}
@@ -274,40 +295,36 @@ void out_add(uint16_t in) {
 	linked_list_add(output, inst);
 }
 
-// Get the 8-bit value of the next token
-int8_t next_byte() {
-	int result;
+// Get the next number or label
+Parse_t *next_num_or_label() {
+	Parse_t *result = malloc(sizeof(Parse_t));
+
 	char *token = next_token();
 	if (isdigit(token[0])) {
-		sscanf(token, "%i", &result);
-		return result & 0xFF;
+		result->type = NUMBER;
+		sscanf(token, "%hi", &result->value.number);
 	} else {
 		// Referencing a label
-		Label_t *n_label = malloc(sizeof(Label_t));	// Create label entry
-		n_label->name = token;
-		n_label->addr = linked_list_len(output); 	// Address is how many insts before this
-
-		linked_list_add(label_ref, n_label);		// Add it to the label list
-		return 0;
+		result->type = LABEL;
+		result->value.name = token;
 	}
+
+	return result;
 }
 
-// Get the 16-bit value of the next token
-int16_t next_short() {
-	int result;
-	char *token = next_token();
-	if (isdigit(token[0])) {
-		sscanf(token, "%i", &result);
-		return result & 0xFFFF;
-	} else {
-		// Referencing a label
-		Label_t *n_label = malloc(sizeof(Label_t));	// Create label entry
-		n_label->name = token;
-		n_label->addr = linked_list_len(output); 	// Address is how many insts before this
+// Add a label reference
+void add_label_ref(uint16_t addr, char *name, uint16_t mask, uint8_t shift) {
+	Label_t *n_label = malloc(sizeof(Label_t));	// Create label entry
 
-		linked_list_add(label_ref, n_label);		// Add it to the label list
-		return 0;
-	}
+	char *n_name = calloc(strlen(name), sizeof(char)); // Copy of string for convience
+	strcpy(n_name, name);
+
+	n_label->name = n_name;
+	n_label->addr = addr;
+	n_label->mask = mask;
+	n_label->shft = shift;
+
+	linked_list_add(label_ref, n_label);		// Add it to the label list
 }
 
 // Tokenize all lines of the input file
@@ -350,6 +367,7 @@ linked_list_t *tokenize(FILE *infile) {
 
 // Get the next token for use
 char *next_token() {
+
 	return linked_list_iter_next(tokens);
 }
 

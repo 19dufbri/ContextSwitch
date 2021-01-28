@@ -1,0 +1,18 @@
+LabelA:
+ADD 	R0, 	R4,		S6
+SUB 	R4, 	S2,		S7
+LIL 	45, 	S7
+LIH 	LabelB, R6
+STO 	R3, 	S3
+LOA 	S2,		R0
+
+LabelB:
+MOV 	S2,		R4
+ADI 	5,		R5
+SKL		R2, 	S4
+INT
+EIN
+IOR		32,		S0
+IOW		S3,		34
+JMP		R6
+JSR		S3
