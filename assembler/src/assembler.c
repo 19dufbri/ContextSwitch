@@ -213,7 +213,7 @@ int proc_instr() {
 		
 		result |= get_reg() << 8;
 
-		if (t->type = LABEL) {
+		if (t->type == LABEL) {
 			add_label_ref(linked_list_len(output), t->value.name, 0xFF, 0);
 			add_label_ref(linked_list_len(output)+1, t->value.name, 0xFF, 8);
 			out_add(result);
@@ -400,7 +400,6 @@ linked_list_t *tokenize(FILE *infile) {
 
 // Get the next token for use
 char *next_token() {
-
 	return linked_list_iter_next(tokens);
 }
 
