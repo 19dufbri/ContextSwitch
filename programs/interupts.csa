@@ -1,19 +1,19 @@
 Machine:
-LIR 	User,	S7 			-- Load ptr to user code into saved reg
-EIN							-- Jump to user code
+LIR 	User,	%S7 			-- Load ptr to user code into saved reg
+EIN								-- Jump to user code
 -- Fall through on interupt
 
-OnInterupt:					-- Every interupt
-LIR 	0x01,			R4	-- Check if user
-LIR		TimerTime,		R5
-SKL		R4,		R0			-- If not user, assume a timer (for now)
-JMP		R5
+OnInterupt:						-- Every interupt
+LIR 	0x01,			%R4		-- Check if user
+LIR		TimerTime,		%R5
+SKL		%R4,		%R0			-- If not user, assume a timer (for now)
+JMP		%R5
 -- User Interupt
 -- Print out "I\n"
-LIR		0x49,	R1			-- 'I'
-IOW		R1,		0x00
-LIR		0x0A,	R1			-- '\n'
-IOW		R1,		0x00
+LIR		0x49,	%R1			-- 'I'
+IOW		%R1,		0x00
+LIR		0x0A,	%R1			-- '\n'
+IOW		%R1,		0x00
 -- Fall through
 
 EndISR:
@@ -21,25 +21,27 @@ EIN
 -- Fall through on interupt
 
 -- Go back to interupt handler
-LIR		OnInterupt, 	R5
-JMP 	R5
+LIR		OnInterupt, 	%R5
+JMP 	%R5
 
 TimerTime:					-- Call every timer cycle
--- Print out "T\n"
-LIR		0x54,	R1			-- 'T'
-IOW		R1,		0x00
-LIR		0x0A,	R1			-- '\n'
-IOW		R1,		0x00
+-- Print out "\nT\n"
+LIR		0x0A,	%R1			-- '\n'
+IOW		%R1,		0x00
+LIR		0x54,	%R1			-- 'T'
+IOW		%R1,		0x00
+LIR		0x0A,	%R1			-- '\n'
+IOW		%R1,		0x00
 
 -- Finish our portion
-LIR		EndISR,		R5
-JMP 	R5
+LIR		EndISR,		%R5
+JMP 	%R5
 
 -- User code
 User:
-LIR		UserLoop,	R5
+LIR		UserLoop,	%R5
 
 UserLoop:
-LIR		0x55,	R1			-- 'U'
-IOW		R1,		0x00
-JMP 	R5
+LIR		0x55,	%R1			-- 'U'
+IOW		%R1,		0x00
+JMP 	%R5

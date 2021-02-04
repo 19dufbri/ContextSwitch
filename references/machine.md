@@ -80,3 +80,7 @@ A list of all instructions are listed below
 | `POP r0`         |   2   | `r0 = [--SP]`                  | Pop `r0` from the stack            |
 | `JGT r0, r1, r2` |   2   | `r0 < r1 ? goto r2 : continue` | Jump if greater than               |
 | `RET`            |   2   | `return`                       | Return from a subroutine           |
+
+The registers are referenced as `%Rx` and `%Sx` where `x` is between 0 and 7. 
+Register `%R7` is the Program Counter, `%R6` is the psuedo Stack Pointer, and 
+`%R5` is used by the psuedo-instructions and will be clobbered.

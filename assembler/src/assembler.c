@@ -291,7 +291,11 @@ int proc_instr() {
 uint8_t get_reg() {
 	uint8_t result = 0x00;
 	char *token = next_token();
-	switch (token[0]) {
+	if (strlen(token) != 3 || token[0] != '%') {
+		fprintf(stderr, " >> Expected register, got %s <<\n", token);
+		syntax_error("Unknown Register");
+	}
+	switch (token[1]) {
 		case 'R':
 			break;
 		case 'S':
@@ -302,7 +306,7 @@ uint8_t get_reg() {
 			syntax_error("Unknown Register");
 			break;
 	}
-	switch (token[1]) {
+	switch (token[2]) {
 		case '0':
 		case '1':
 		case '2':
@@ -311,7 +315,7 @@ uint8_t get_reg() {
 		case '5':
 		case '6':
 		case '7':
-			result |= token[1] - '0';
+			result |= token[2] - '0';
 			break;
 		default:
 			fprintf(stderr, " >> %s <<\n", token);
