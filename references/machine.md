@@ -42,7 +42,7 @@ Opcode  r0      r1      r2
 | `0x3`  |`r0[15..8] = i`  | Load 8-bits into the high side of a register               |
 | `0x4`  |`mem[r1] = r0`   | Store register at another register's location              |
 | `0x5`  |`r0 = mem[r1]`   | Load register from another's location                      |
-| `0x6`  |`r1 = r0`        | Copy one register to another                               |
+| `0x6`  |`r0 = r1`        | Copy one register to another                               |
 | `0x7`  |`r0 += i`        | Add an signed 8-bit offset to a register                   |
 | `0x8`  |`r0 < r1 ? PC++` | Skip next instruction if one register is less than another |
 | `0x9`  |Call ISR         | Call an interupt                                           |
@@ -58,24 +58,25 @@ Since the CPU is so limited in its instruction set, the assembler has several ps
 
 A list of all instructions are listed below
 
-| Mnemonic         | Cycles | C Equivalent                   | Description                        |
-|------------------|:------:|--------------------------------|------------------------------------|
-| `ADD r1, r2, r0` |    1   | `r0 = r1 + r2`                 | Add two numbers                    |
-| `SUB r1, r2, r0` |    1   | `r0 = r1 - r2`                 | Subtract two numbers               |
-| `LIL i, r0`      |    1   | `r0[7..0] = i`                 | Load 8-low bits                    |
-| `LIH i, r0`      |    1   | `r0[15..8] = i`                | Load 8-high bits                   |
-| `STO r0, r1`     |    1   | `mem[r1] = r0`                 | Store `r0` at `mem[r1]`            |
-| `LOA r1, r0`     |    1   | `r0 = mem[r1]`                 | Load `r0` from `mem[r1]`           |
-| `MOV r1, r0`     |    1   | `r0 = r1`                      | Copy `r1` to `r0`                  |
-| `ADI i, r0`      |    1   | `r0 += i`                      | Add an immediate                   |
-| `SKL r0, r1`     |    1   | `r0 < r1 ? continue : PC++`    | Skip next instruction if less than |
-| `INT`            |    1   | Call ISR                       | Call a software interupt           |
-| `EIN`            |    1   | End ISR                        | End an ISR                         |
-| `IOR i, r0`      |    1   | `r0 = io[i]`                   | Read from an IO location           |
-| `IOW r0, i`      |    1   | `io[i] = r0`                   | Write to an IO location            |
-| `LIR ii, r0`     |    2   | `r0 = ii`                      | Load 16-bit immediate              |
-| `JMP r0`         |    1   | `goto r0`                      | Goto location in register          |
-| `JSR r0`         |    5   | `r0()`                         | Call a subroutine                  |
-| `PSH r0`         |    2   | `[SP++] = r0`                  | Push `r0` onto the stack           |
-| `POP r0`         |    2   | `r0 = [--SP]`                  | Pop `r0` from the stack            |
-| `JGT r0, r1, r2` |   4?   | `r0 < r1 ? goto r2 : continue` | Jump if greater than               |
+| Mnemonic         | Cycles| C Equivalent                   | Description                        |
+|------------------|:-----:|--------------------------------|------------------------------------|
+| `ADD r1, r2, r0` |   1   | `r0 = r1 + r2`                 | Add two numbers                    |
+| `SUB r1, r2, r0` |   1   | `r0 = r1 - r2`                 | Subtract two numbers               |
+| `LIL i, r0`      |   1   | `r0[7..0] = i`                 | Load 8-low bits                    |
+| `LIH i, r0`      |   1   | `r0[15..8] = i`                | Load 8-high bits                   |
+| `STO r0, r1`     |   1   | `mem[r1] = r0`                 | Store `r0` at `mem[r1]`            |
+| `LOA r1, r0`     |   1   | `r0 = mem[r1]`                 | Load `r0` from `mem[r1]`           |
+| `MOV r1, r0`     |   1   | `r0 = r1`                      | Copy `r1` to `r0`                  |
+| `ADI i, r0`      |   1   | `r0 += i`                      | Add an immediate                   |
+| `SKL r0, r1`     |   1   | `r0 < r1 ? continue : PC++`    | Skip next instruction if less than |
+| `INT`            |   1   | Call ISR                       | Call a software interupt           |
+| `EIN`            |   1   | End ISR                        | End an ISR                         |
+| `IOR i, r0`      |   1   | `r0 = io[i]`                   | Read from an IO location           |
+| `IOW r0, i`      |   1   | `io[i] = r0`                   | Write to an IO location            |
+| `LIR ii, r0`     |   2   | `r0 = ii`                      | Load 16-bit immediate              |
+| `JMP r0`         |   1   | `goto r0`                      | Goto location in register          |
+| `JSR r0`         |   5   | `r0()`                         | Call a subroutine                  |
+| `PSH r0`         |   2   | `[SP++] = r0`                  | Push `r0` onto the stack           |
+| `POP r0`         |   2   | `r0 = [--SP]`                  | Pop `r0` from the stack            |
+| `JGT r0, r1, r2` |   2   | `r0 < r1 ? goto r2 : continue` | Jump if greater than               |
+| `RET`            |   3   | `return`                       | Return from a subroutine           |
