@@ -146,7 +146,6 @@ int do_opcode(SimpleCore *core) {
 			break;
 		case 0xC: // IOW
 			printf("%c", core->regs[r0] & 0xFF);
-			//scanf("%*c");
 			break;
 		case 0xD:
 		case 0xE:
