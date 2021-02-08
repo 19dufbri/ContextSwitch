@@ -272,6 +272,18 @@ int proc_instr() {
 		out_add(0x5760); // LOA 	SP,		PC
 	}
 
+	else if (token[0] == '.') { // Direct Byte
+		if (isdigit(token[1])) {
+			sscanf(token+1, "%hi", &result);
+		} else {
+			// Assume character
+			// TODO: No Assume
+			result = 0x0000;
+			sscanf(token+2, "%c", (char *) &result);
+		}
+		out_add(result);
+	}
+
 	else if (token[strlen(token)-1] == ':') {	// Label Definitions
 		token[strlen(token)-1] = '\0';				// Chop off colon
 

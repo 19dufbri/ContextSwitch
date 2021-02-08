@@ -20,3 +20,8 @@ JSR		%S3
 PSH		%S2
 POP		%R7
 JGT		%R2,	%S1,	%R1
+
+.0x3453
+.'A'
+.'B'
+.'C'
