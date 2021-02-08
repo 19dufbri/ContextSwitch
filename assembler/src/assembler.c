@@ -266,7 +266,7 @@ int proc_instr() {
 		result = 0x6700;
 		result |= get_reg() << 4;
 		out_add(result);
-	} else if (strcmp(token, "JGT") == 0) { // RET
+	} else if (strcmp(token, "RET") == 0) { // RET
 		// POP return address and jump
 		out_add(0x76FF); // ADI		-1, 	SP
 		out_add(0x5760); // LOA 	SP,		PC
