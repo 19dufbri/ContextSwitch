@@ -274,7 +274,7 @@ int proc_instr() {
 		
 		// MOV r2, PC
 		result = 0x6700;
-		result |= get_reg() << 4;
+		result |= expect_reg() << 4;
 		out_add(result);
 	} else if (strcmp(token, "RET") == 0) { // RET
 		// POP return address and jump
