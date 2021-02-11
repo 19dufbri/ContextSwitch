@@ -14,19 +14,21 @@ typedef struct {
 typedef struct {
 	enum {
 		LABEL,
-		NUMBER
+		NUMBER,
+		REG
 	} type;
 	union {
-		char *name;
-		uint16_t number;
+		char *name;			// Name of label
+		uint16_t number;	// Number OR register
 	} value;
 } Parse_t;
 
 int proc_instr();
+uint8_t expect_reg();
 uint8_t get_reg();
 char *next_token();
 void syntax_error(char *error);
-linked_list_t *tokenize(FILE *infile);
+void tokenize(linked_list_t *tokens, FILE *infile);
 void out_add(uint16_t in);
 int8_t next_byte();
 int16_t next_short();

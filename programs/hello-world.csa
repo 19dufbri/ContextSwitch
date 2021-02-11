@@ -1,7 +1,11 @@
-LIR		0x41,	%R0 	-- Load 'A' into R0
-IOW		%R0,	0x00	-- Print 'A'
-LIR		0x42,	%R0		-- Load 'B' into R0
-IOW		%R0,	0x00	-- Print 'B'
-LIR		0x43,	%R0		-- Load 'C' into R0
-IOW		%R0,	0x00	-- Print 'C'
+LIR		#0x41,	%R0 	-- Load 'A' into R0
+IOW		%R0,	#0x00	-- Print 'A'
+LIR		#0x42,	%R0		-- Load 'B' into R0
+IOW		%R0,	#0x00	-- Print 'B'
+LIR		#0x43,	%R0		-- Load 'C' into R0
+IOW		%R0,	#0x00	-- Print 'C'
 INT
+
+PrintString:
+LIR		$PrintLoop, %R1	-- Load addr for loop
+	PrintLoop:

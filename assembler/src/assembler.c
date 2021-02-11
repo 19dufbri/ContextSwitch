@@ -21,7 +21,8 @@ int main(int argc, char *argv[]) {
 
 	// Read input file and tokenize it
 	FILE *infile = fopen(argv[1], "r");
-	tokens = tokenize(infile);
+	tokens = new_linked_list();
+	tokenize(tokens, infile);
 	fclose(infile);
 
 	// Initialize linked lists
@@ -99,18 +100,27 @@ int proc_instr() {
 		return 1; // EOF, expected exit
 	}
 
+	// Assembler Directives
+	if (strcmp(token, "#INCLUDE") == 0) {
+		// TODO: Unimplimented
+		exit(1);
+	}
 	// "Real" Instructions
-	if (strcmp(token, "ADD") == 0) {		// ADD r1, r2, r0
+	else if (strcmp(token, "ADD") == 0) {		// ADD r1, r2, r0
 		result = 0x0000;
-		result |= get_reg() << 4;	// r1
-		result |= get_reg();		// r2
-		result |= get_reg() << 8;	// r0
+
+		result |= expect_reg() << 4;	// r1
+		result |= expect_reg();			// r2
+		result |= expect_reg() << 8;	// r0
+
 		out_add(result);
 	} else if (strcmp(token, "SUB") == 0) {	// SUB r1, r2, r0
 		result = 0x1000;
-		result |= get_reg() << 4;	// r1
-		result |= get_reg();		// r2
-		result |= get_reg() << 8;	// r0
+
+		result |= expect_reg() << 4;	// r1
+		result |= expect_reg();			// r2
+		result |= expect_reg() << 8;	// r0
+		
 		out_add(result);
 	} else if (strcmp(token, "LIL") == 0) {	// LIL i,  r0
 		result = 0x2000;
@@ -123,7 +133,7 @@ int proc_instr() {
 		}
 		free(t);
 
-		result |= get_reg() << 8;
+		result |= expect_reg() << 8;
 		out_add(result);
 	} else if (strcmp(token, "LIH") == 0) {	// LIH i,  r0
 		result = 0x3000;
@@ -136,22 +146,22 @@ int proc_instr() {
 		}
 		free(t);
 
-		result |= get_reg() << 8;
+		result |= expect_reg() << 8;
 		out_add(result);
 	} else if (strcmp(token, "STO") == 0) { // STO r0, r1
 		result = 0x4000;
-		result |= get_reg() << 8;
-		result |= get_reg() << 4;
+		result |= expect_reg() << 8;
+		result |= expect_reg() << 4;
 		out_add(result);
 	} else if (strcmp(token, "LOA") == 0) { // LOA r1, r0
 		result = 0x5000;
-		result |= get_reg() << 4;
-		result |= get_reg() << 8;
+		result |= expect_reg() << 4;
+		result |= expect_reg() << 8;
 		out_add(result);
 	} else if (strcmp(token, "MOV") == 0) { // MOV r1, r0
 		result = 0x6000;
-		result |= get_reg() << 4;
-		result |= get_reg() << 8;
+		result |= expect_reg() << 4;
+		result |= expect_reg() << 8;
 		out_add(result);
 	} else if (strcmp(token, "ADI") == 0) { // ADI i,  r0
 		result = 0x7000;
@@ -164,12 +174,12 @@ int proc_instr() {
 		}
 		free(t);
 
-		result |= get_reg() << 8;
+		result |= expect_reg() << 8;
 		out_add(result);
 	} else if (strcmp(token, "SKL") == 0) { // SKL r0, r1
 		result = 0x8000;
-		result |= get_reg() << 8;
-		result |= get_reg() << 4;
+		result |= expect_reg() << 8;
+		result |= expect_reg() << 4;
 		out_add(result);
 	} else if (strcmp(token, "INT") == 0) { // INT
 		result = 0x9000;
@@ -188,11 +198,11 @@ int proc_instr() {
 		}
 		free(t);
 
-		result |= get_reg() << 8;
+		result |= expect_reg() << 8;
 		out_add(result);
 	} else if (strcmp(token, "IOW") == 0) { // IOW r0, i
 		result = 0xC000;
-		result |= get_reg() << 8;
+		result |= expect_reg() << 8;
 
 		Parse_t *t = next_num_or_label();
 		if (t->type = LABEL) {
@@ -206,12 +216,12 @@ int proc_instr() {
 	} 
 
 	// Pseudo-Instructions
-	  else if (strcmp(token, "LIR") == 0) { // LIR ii, r0
+	else if (strcmp(token, "LIR") == 0) { // LIR ii, r0
 		result = 0x2000;
 
 		Parse_t *t = next_num_or_label();
 		
-		result |= get_reg() << 8;
+		result |= expect_reg() << 8;
 
 		if (t->type == LABEL) {
 			add_label_ref(linked_list_len(output), t->value.name, 0xFF, 0);
@@ -225,7 +235,7 @@ int proc_instr() {
 		free(t);
 	} else if (strcmp(token, "JMP") == 0) { // JMP r1
 		result = 0x6700;
-		result |= get_reg() << 4;
+		result |= expect_reg() << 4;
 		out_add(result);
 	} else if (strcmp(token, "JSR") == 0) { // JSR r1
 		out_add(0x6570); // MOV PC, R5
@@ -235,12 +245,12 @@ int proc_instr() {
 
 		// MOV r1, PC
 		result = 0x6700;
-		result |= get_reg() << 8;
+		result |= expect_reg() << 8;
 		out_add(result);
 	} else if (strcmp(token, "PSH") == 0) { // PSH r0 
 		result = 0x4060;
 
-		result |= get_reg() << 8;
+		result |= expect_reg() << 8;
 
 		out_add(result); // STO r0, SP
 		out_add(0x7601); // ADI 1,  SP
@@ -249,7 +259,7 @@ int proc_instr() {
 
 		result = 0x5060;
 
-		result |= get_reg() << 8;
+		result |= expect_reg() << 8;
 
 		out_add(result); // LOA SP, r0
 		
@@ -258,8 +268,8 @@ int proc_instr() {
 		
 		// SKL r0, r1
 		result = 0x8000;
-		result |= get_reg() << 8;
-		result |= get_reg() << 4;
+		result |= expect_reg() << 8;
+		result |= expect_reg() << 4;
 		out_add(result);
 		
 		// MOV r2, PC
@@ -299,10 +309,18 @@ int proc_instr() {
 	return 0;
 }
 
+uint8_t expect_reg() {
+	Parse_t *r0 = next_num_or_label();
+	if (r0->type != REG) {
+		syntax_error("Register Expected");
+	}
+	return r0->value.number; 	// r0
+}
+
 // Get Single Register
-uint8_t get_reg() {
+uint8_t get_reg(char *token) {
 	uint8_t result = 0x00;
-	char *token = next_token();
+
 	if (strlen(token) != 3 || token[0] != '%') {
 		fprintf(stderr, " >> Expected register, got %s <<\n", token);
 		syntax_error("Unknown Register");
@@ -349,13 +367,21 @@ Parse_t *next_num_or_label() {
 	Parse_t *result = malloc(sizeof(Parse_t));
 
 	char *token = next_token();
-	if (isdigit(token[0])) {
+
+	if (token[0] == '#') {
+		// Referencing an immidate
 		result->type = NUMBER;
-		sscanf(token, "%hi", &result->value.number);
-	} else {
+		sscanf(token+1, "%hi", &result->value.number);
+	} else if (token[0] == '$') {
 		// Referencing a label
 		result->type = LABEL;
-		result->value.name = token;
+		result->value.name = token+1;
+	} else if (token[0] == '%') {
+		// Referencing a register
+		result->type = REG;
+		result->value.number = get_reg(token);
+	} else {
+		syntax_error("Unknown reference!");
 	}
 
 	return result;
@@ -378,9 +404,8 @@ void add_label_ref(uint16_t addr, char *name, uint16_t mask, uint8_t shift) {
 
 // Tokenize all lines of the input file
 char *delim = " \t\n\r,";
-linked_list_t *tokenize(FILE *infile) {
+void tokenize(linked_list_t *result, FILE *infile) {
 	// Create list for tokens
-	linked_list_t *result = new_linked_list();
 	char *line = NULL;
 	char *token = NULL;
 	size_t len;
@@ -411,7 +436,6 @@ linked_list_t *tokenize(FILE *infile) {
 	free(line);
 	
 	linked_list_iter_rewind(result);
-	return result;
 }
 
 // Get the next token for use
