@@ -5,10 +5,10 @@
 #include "assembler.h"
 #include "linked_list.h"
 
-linked_list_t *tokens;
-linked_list_t *label_def;
-linked_list_t *label_ref;
-linked_list_t *output;
+ll_t *tokens;
+ll_t *label_def;
+ll_t *label_ref;
+ll_t *output;
 uint16_t *out_full;
 
 int main(int argc, char *argv[]) {
@@ -21,14 +21,22 @@ int main(int argc, char *argv[]) {
 
 	// Read input file and tokenize it
 	FILE *infile = fopen(argv[1], "r");
-	tokens = new_linked_list();
+	tokens = new_ll();
+	ll_add(tokens, "LIR");
+	ll_add(tokens, "$main");
+	ll_add(tokens, "%R0");
+	ll_add(tokens, "JMP");
+	ll_add(tokens, "%R0");
 	tokenize(tokens, infile);
 	fclose(infile);
 
+	// Put to start for processing
+	ll_iter_rewind(tokens);
+
 	// Initialize linked lists
-	label_def = new_linked_list();
-	label_ref = new_linked_list();
-	output = new_linked_list();
+	label_def = new_ll();
+	label_ref = new_ll();
+	output = new_ll();
 
 	// Create unlinked instruction stream
 	int done;
@@ -37,15 +45,15 @@ int main(int argc, char *argv[]) {
 	} while (!done);
 
 	// Create final array of instructions
-	out_full = calloc(linked_list_len(output), sizeof(uint16_t));
+	out_full = calloc(ll_len(output), sizeof(uint16_t));
 
 	// Rewind iterators
-	linked_list_iter_rewind(output);
-	linked_list_iter_rewind(label_ref);
+	ll_iter_rewind(output);
+	ll_iter_rewind(label_ref);
 
 	// Get first elements
-	uint16_t *inst = (uint16_t *) linked_list_iter_next(output);
-	Label_t *c_ref = linked_list_iter_next(label_ref);
+	uint16_t *inst = (uint16_t *) ll_iter_next(output);
+	Label_t *c_ref = ll_iter_next(label_ref);
 
 	// For every instruction, linking if needed
 	int i = 0;
@@ -55,10 +63,10 @@ int main(int argc, char *argv[]) {
 			// Found Reference
 
 			// Find associated definition
-			linked_list_iter_rewind(label_def);
-			c_def = linked_list_iter_next(label_def);
+			ll_iter_rewind(label_def);
+			c_def = ll_iter_next(label_def);
 			while (strcmp(c_ref->name, c_def->name) != 0) {
-				c_def = linked_list_iter_next(label_def);
+				c_def = ll_iter_next(label_def);
 
 				// Ran off the end, missing definition
 				if (c_def == NULL) {
@@ -70,19 +78,19 @@ int main(int argc, char *argv[]) {
 			// Update associated address
 			*inst |= (c_def->addr & c_ref->mask) >> c_ref->shft;
 
-			c_ref = linked_list_iter_next(label_ref);
+			c_ref = ll_iter_next(label_ref);
 		}
 
 		// Move instruction to final list
 		out_full[i++] = *inst;
 
 		// Get next instruction
-		inst = (uint16_t *) linked_list_iter_next(output);
+		inst = (uint16_t *) ll_iter_next(output);
 	}
 
 	// Write the final program to a file
 	FILE *ofile = fopen(argv[2], "wb");
-	fwrite(out_full, 2, linked_list_len(output), ofile);
+	fwrite(out_full, 2, ll_len(output), ofile);
 	fclose(ofile);
 
 	free_memory();
@@ -96,14 +104,25 @@ int main(int argc, char *argv[]) {
 int proc_instr() {
 	uint16_t result;
 	char *token = next_token();
+	printf("TOKEN: 	%s\n", token);
+	printf("LL_LEN:	%d\n", ll_len(tokens));
 	if (token == NULL) {
 		return 1; // EOF, expected exit
 	}
 
 	// Assembler Directives
 	if (strcmp(token, "#INCLUDE") == 0) {
-		// TODO: Unimplimented
-		exit(1);
+		// Include a file
+		// TODO: FIX SKETCH SOLUTION
+		char *fname = ll_iter_next(tokens); // ~Should~ be a filename
+		FILE *newfile = fopen(fname, "r"); // TODO: FIX FILE DANGER
+		if (newfile == NULL) {
+			fprintf(stderr, " >> %s <<\n", fname);
+			syntax_error("File not found");
+		}
+		tokenize(tokens, newfile);
+		next_token();
+		fclose(newfile);
 	}
 	// "Real" Instructions
 	else if (strcmp(token, "ADD") == 0) {		// ADD r1, r2, r0
@@ -127,7 +146,7 @@ int proc_instr() {
 
 		Parse_t *t = next_num_or_label();
 		if (t->type = LABEL) {
-			add_label_ref(linked_list_len(output), t->value.name, 0xFF, 0);
+			add_label_ref(ll_len(output), t->value.name, 0xFF, 0);
 		} else {
 			result |= t->value.number & 0xFF;
 		}
@@ -140,7 +159,7 @@ int proc_instr() {
 
 		Parse_t *t = next_num_or_label();
 		if (t->type = LABEL) {
-			add_label_ref(linked_list_len(output), t->value.name, 0xFF, 8);
+			add_label_ref(ll_len(output), t->value.name, 0xFF, 8);
 		} else {
 			result |= (t->value.number >> 8) & 0xFF;
 		}
@@ -168,7 +187,7 @@ int proc_instr() {
 
 		Parse_t *t = next_num_or_label();
 		if (t->type = LABEL) {
-			add_label_ref(linked_list_len(output), t->value.name, 0xFF, 0);
+			add_label_ref(ll_len(output), t->value.name, 0xFF, 0);
 		} else {
 			result |= t->value.number & 0xFF;
 		}
@@ -192,7 +211,7 @@ int proc_instr() {
 
 		Parse_t *t = next_num_or_label();
 		if (t->type = LABEL) {
-			add_label_ref(linked_list_len(output), t->value.name, 0xFF, 0);
+			add_label_ref(ll_len(output), t->value.name, 0xFF, 0);
 		} else {
 			result |= t->value.number & 0xFF;
 		}
@@ -203,10 +222,11 @@ int proc_instr() {
 	} else if (strcmp(token, "IOW") == 0) { // IOW r0, i
 		result = 0xC000;
 		result |= expect_reg() << 8;
+		printf("Found Reg\n");
 
 		Parse_t *t = next_num_or_label();
 		if (t->type = LABEL) {
-			add_label_ref(linked_list_len(output), t->value.name, 0xFF, 0);
+			add_label_ref(ll_len(output), t->value.name, 0xFF, 0);
 		} else {
 			result |= t->value.number & 0xFF;
 		}
@@ -224,8 +244,8 @@ int proc_instr() {
 		result |= expect_reg() << 8;
 
 		if (t->type == LABEL) {
-			add_label_ref(linked_list_len(output), t->value.name, 0xFF, 0);
-			add_label_ref(linked_list_len(output)+1, t->value.name, 0xFF, 8);
+			add_label_ref(ll_len(output), t->value.name, 0xFF, 0);
+			add_label_ref(ll_len(output)+1, t->value.name, 0xFF, 8);
 			out_add(result);
 			out_add(result | 0x1000);
 		} else {
@@ -239,13 +259,13 @@ int proc_instr() {
 		out_add(result);
 	} else if (strcmp(token, "JSR") == 0) { // JSR r1
 		out_add(0x6570); // MOV PC, R5
-		out_add(0x7505); // ADI 5,  R5
+		out_add(0x7504); // ADI 5,  R5
 		out_add(0x4560); // STO R5, SP
 		out_add(0x7601); // ADI 1,  SP
 
 		// MOV r1, PC
 		result = 0x6700;
-		result |= expect_reg() << 8;
+		result |= expect_reg() << 4;
 		out_add(result);
 	} else if (strcmp(token, "PSH") == 0) { // PSH r0 
 		result = 0x4060;
@@ -299,9 +319,9 @@ int proc_instr() {
 
 		Label_t *n_label = malloc(sizeof(Label_t));	// Create label entry
 		n_label->name = token;
-		n_label->addr = linked_list_len(output); 	// Address is how many insts before this
+		n_label->addr = ll_len(output); 	// Address is how many insts before this
 
-		linked_list_add(label_def, n_label);		// Add it to the label list
+		ll_add(label_def, n_label);		// Add it to the label list
 	} else {
 		printf(" >> %s <<\n", token);
 		syntax_error("Unknown token");
@@ -312,6 +332,7 @@ int proc_instr() {
 uint8_t expect_reg() {
 	Parse_t *r0 = next_num_or_label();
 	if (r0->type != REG) {
+		printf("%d\n", r0->type);
 		syntax_error("Register Expected");
 	}
 	return r0->value.number; 	// r0
@@ -359,7 +380,7 @@ uint8_t get_reg(char *token) {
 void out_add(uint16_t in) {
 	uint16_t *inst = malloc(sizeof(uint16_t));
 	*inst = in;
-	linked_list_add(output, inst);
+	ll_add(output, inst);
 }
 
 // Get the next number or label
@@ -367,7 +388,7 @@ Parse_t *next_num_or_label() {
 	Parse_t *result = malloc(sizeof(Parse_t));
 
 	char *token = next_token();
-
+	printf("%s\n", token);
 	if (token[0] == '#') {
 		// Referencing an immidate
 		result->type = NUMBER;
@@ -399,12 +420,14 @@ void add_label_ref(uint16_t addr, char *name, uint16_t mask, uint8_t shift) {
 	n_label->mask = mask;
 	n_label->shft = shift;
 
-	linked_list_add(label_ref, n_label);		// Add it to the label list
+	ll_add(label_ref, n_label);		// Add it to the label list
 }
 
 // Tokenize all lines of the input file
 char *delim = " \t\n\r,";
-void tokenize(linked_list_t *result, FILE *infile) {
+void tokenize(ll_t *result, FILE *infile) {
+	// ll_iter_rewind(result);
+
 	// Create list for tokens
 	char *line = NULL;
 	char *token = NULL;
@@ -424,7 +447,8 @@ void tokenize(linked_list_t *result, FILE *infile) {
 			// Copy over string for memory sanity
 			char *new_t = malloc(strlen(token) + 1);
 			strcpy(new_t, token);
-			linked_list_add(result, new_t);
+			ll_add_iter(result, new_t);
+			ll_iter_next(result);
 
 			token = strtok(NULL, delim);
 		}
@@ -434,13 +458,14 @@ void tokenize(linked_list_t *result, FILE *infile) {
 	}
 
 	free(line);
-	
-	linked_list_iter_rewind(result);
+	ll_iter_rewind(result);
 }
 
 // Get the next token for use
 char *next_token() {
-	return linked_list_iter_next(tokens);
+	char *result = ll_iter_next(tokens);
+	ll_remove_iter(tokens);
+	return result;
 }
 
 // Free all memory used by program
@@ -453,18 +478,18 @@ void free_memory() {
 }
 
 // Fully free a linked list, including it's items
-void free_ll(linked_list_t *list) {
+void free_ll(ll_t *list) {
 	// Free all allocated items
-	linked_list_iter_rewind(list);
-	void *item = linked_list_iter_next(list);
+	ll_iter_rewind(list);
+	void *item = ll_iter_next(list);
 
 	while (item != NULL) {
 		free(item);
-		item = linked_list_iter_next(list);
+		item = ll_iter_next(list);
 	}
 
 	// Free list
-	del_linked_list(list);
+	del_ll(list);
 }
 
 // Worst error reporting ever :)

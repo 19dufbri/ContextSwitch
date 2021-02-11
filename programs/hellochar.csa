@@ -1,0 +1,3 @@
+printchar:
+IOW		%R0,	#0x52
+RET

@@ -1,3 +1,4 @@
+main:
 Machine:
 LIR 	$User,	%S7 			-- Load ptr to user code into saved reg
 EIN								-- Jump to user code

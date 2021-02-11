@@ -126,7 +126,7 @@ int do_opcode(SimpleCore *core) {
 			break;
 		case 0x7: // ADI 
 			{
-				uint8_t imm = opcode & 0xFF;
+				int8_t imm = opcode & 0xFF;
 				core->regs[r0] += imm;
 			}
 			break;
