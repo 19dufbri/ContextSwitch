@@ -1,0 +1,31 @@
+printchar:
+IOW		%R0,	#00
+RET
+
+printstring:
+PSH		%R1
+PSH		%R2
+PSH		%R3
+PSH		%R4
+-- %R0						-- Addr to print
+-- %R1						-- Char to print
+LIR		$end,		%R2		-- End of function
+LIR		#0x01,		%R3		-- One for NULL check
+LIR		$printloop, %R4		-- Addr of loop head
+-- %R5						-- Internal Use
+-- %R6						-- Stack Pointer
+-- %R7						-- Program Counter
+
+	printloop:
+	LOA 	%R1,	%R0				-- Load first char into R0
+	JGT		%R3,	%R0,	%R2 	-- Jump to end if character is null
+	IOW		%R1,	#00				-- Print character
+	ADI		#0x01,	%R1				-- Increment R1
+	JMP 	%R4
+
+end:
+POP		%R4
+POP		%R3
+POP		%R2
+POP		%R1
+RET
