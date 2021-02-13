@@ -31,7 +31,8 @@ typedef enum {
 	CUNIT,
 	PVAR,
 	PFUN,
-	LITERAL
+	STRLIT,
+	INTLIT
 } ParseType_t;
 
 typedef struct Parse {
@@ -39,6 +40,8 @@ typedef struct Parse {
 	char *name;
 	union {
 		struct Parse *child;
+		char *string;
+		uint16_t number;
 		ll_t *children;
 	} value;
 } Parse_t;
@@ -123,7 +126,7 @@ Parse_t *parse_var(ll_t *tokens) {
 			result->value.child = parse_rvalue(tokens);
 			break;
 		case SEMICOLON:
-			// TODO : Implement no val case
+			result->value.child = NULL; // Signifier of no rvalue
 			break;
 		default:
 			fprintf(stderr, " >> %d <<\n", token->type);
@@ -135,7 +138,31 @@ Parse_t *parse_var(ll_t *tokens) {
 }
 
 Parse_t *parse_rvalue(ll_t *tokens) {
+	// Expects only int or string for the moment
+	Token_t *token = ll_iter_next(tokens);
 
+	Parse_t *result = malloc(sizeof(Parse_t));
+
+	switch (token->type) {
+		case STRING:
+			result->type = STRLIT;
+			result->value.string = token->value.string;
+			break;
+		case NUMBER:
+			result->type = INTLIT;
+			result->value.number = token->value.number;
+			break;
+		default:
+			fprintf(stderr, " >> %d <<\n", token->type);
+			syntax_error("rvalue parse error");
+			break;
+	}
+
+	if ((token = ll_iter_next(tokens))->type != SEMICOLON) {
+		syntax_error("Expected semicolon");
+	}
+
+	return result;
 }
 
 void tokenize(FILE *infile) {
