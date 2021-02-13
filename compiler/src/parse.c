@@ -28,23 +28,25 @@ typedef struct {
 } Token_t;
 
 typedef enum {
-	FILE,
-	VAR,
-	FUN,
+	CUNIT,
+	PVAR,
+	PFUN,
 	LITERAL
 } ParseType_t;
 
-typedef struct {
+typedef struct Parse {
 	ParseType_t type;
 	char *name;
 	union {
-		Parse_t *child;
+		struct Parse *child;
 		ll_t *children;
 	} value;
 } Parse_t;
 
 void syntax_error(char *message);
 Parse_t *parse_file(ll_t *tokens);
+Parse_t *parse_var(ll_t *tokens);
+Parse_t *parse_rvalue(ll_t *tokens);
 
 ll_t *tokens;
 void tokenize(FILE *infile);
@@ -88,7 +90,7 @@ Parse_t *parse_file(ll_t *tokens) {
 	while ((token = ll_iter_next(tokens)) != NULL) {
 		switch (token->type) {
 			case VAR:
-				printf("Got VAR\n");
+				parse_var(tokens); // TODO: Use result
 				break;
 			case FUN:
 				printf("Got FUN\n");
@@ -107,7 +109,7 @@ Parse_t *parse_var(ll_t *tokens) {
 	Token_t *token = ll_iter_next(tokens);
 
 	if (token->type != IDENT) {
-		fprintf(" >> %d <<\n", token->type);
+		fprintf(stderr, " >> %d <<\n", token->type);
 		syntax_error("Expected variable name!");
 	}
 
@@ -121,6 +123,7 @@ Parse_t *parse_var(ll_t *tokens) {
 			result->value.child = parse_rvalue(tokens);
 			break;
 		case SEMICOLON:
+			// TODO : Implement no val case
 			break;
 		default:
 			fprintf(stderr, " >> %d <<\n", token->type);
