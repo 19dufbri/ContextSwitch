@@ -22,11 +22,7 @@ int main(int argc, char *argv[]) {
 	// Read input file and tokenize it
 	FILE *infile = fopen(argv[1], "r");
 	tokens = new_ll();
-	ll_add(tokens, "LIR");
-	ll_add(tokens, "$main");
-	ll_add(tokens, "%R0");
-	ll_add(tokens, "JMP");
-	ll_add(tokens, "%R0");
+
 	tokenize(tokens, infile);
 	fclose(infile);
 
@@ -103,9 +99,7 @@ int main(int argc, char *argv[]) {
 // Generate the instruction for each line of the input
 int proc_instr() {
 	uint16_t result;
-	char *token = next_token();
-	printf("TOKEN: 	%s\n", token);
-	printf("LL_LEN:	%d\n", ll_len(tokens));
+	char *token = next_token(); // Freed at end of proc_instr
 	if (token == NULL) {
 		return 1; // EOF, expected exit
 	}
@@ -121,7 +115,7 @@ int proc_instr() {
 			syntax_error("File not found");
 		}
 		tokenize(tokens, newfile);
-		next_token();
+		free(next_token()); // Filename again, can ignore
 		fclose(newfile);
 	}
 	// "Real" Instructions
@@ -222,7 +216,6 @@ int proc_instr() {
 	} else if (strcmp(token, "IOW") == 0) { // IOW r0, i
 		result = 0xC000;
 		result |= expect_reg() << 8;
-		printf("Found Reg\n");
 
 		Parse_t *t = next_num_or_label();
 		if (t->type = LABEL) {
@@ -248,6 +241,7 @@ int proc_instr() {
 			add_label_ref(ll_len(output)+1, t->value.name, 0xFF, 8);
 			out_add(result);
 			out_add(result | 0x1000);
+			free(t->value.name);
 		} else {
 			out_add(result | (t->value.number & 0xFF));
 			out_add(result | 0x1000 | ((t->value.number & 0xFF) >> 8));
@@ -315,10 +309,10 @@ int proc_instr() {
 	}
 
 	else if (token[strlen(token)-1] == ':') {	// Label Definitions
-		token[strlen(token)-1] = '\0';				// Chop off colon
 
 		Label_t *n_label = malloc(sizeof(Label_t));	// Create label entry
-		n_label->name = token;
+		n_label->name = calloc(strlen(token), sizeof(char));
+		strncpy(n_label->name, token, strlen(token)-1);
 		n_label->addr = ll_len(output); 	// Address is how many insts before this
 
 		ll_add(label_def, n_label);		// Add it to the label list
@@ -326,6 +320,9 @@ int proc_instr() {
 		printf(" >> %s <<\n", token);
 		syntax_error("Unknown token");
 	}
+
+	free(token);
+
 	return 0;
 }
 
@@ -335,7 +332,9 @@ uint8_t expect_reg() {
 		printf("%d\n", r0->type);
 		syntax_error("Register Expected");
 	}
-	return r0->value.number; 	// r0
+	uint8_t res = r0->value.number;
+	free(r0);
+	return res; 	// r0
 }
 
 // Get Single Register
@@ -387,8 +386,8 @@ void out_add(uint16_t in) {
 Parse_t *next_num_or_label() {
 	Parse_t *result = malloc(sizeof(Parse_t));
 
-	char *token = next_token();
-	printf("%s\n", token);
+	char *token = next_token(); // Freed at end of func
+
 	if (token[0] == '#') {
 		// Referencing an immidate
 		result->type = NUMBER;
@@ -396,7 +395,10 @@ Parse_t *next_num_or_label() {
 	} else if (token[0] == '$') {
 		// Referencing a label
 		result->type = LABEL;
-		result->value.name = token+1;
+
+		// Malloc so that we can free token
+		result->value.name = calloc(strlen(token+1)+1, sizeof(char));
+		strcpy(result->value.name, token+1);
 	} else if (token[0] == '%') {
 		// Referencing a register
 		result->type = REG;
@@ -405,6 +407,8 @@ Parse_t *next_num_or_label() {
 		syntax_error("Unknown reference!");
 	}
 
+	free(token);
+
 	return result;
 }
 
@@ -412,7 +416,7 @@ Parse_t *next_num_or_label() {
 void add_label_ref(uint16_t addr, char *name, uint16_t mask, uint8_t shift) {
 	Label_t *n_label = malloc(sizeof(Label_t));	// Create label entry
 
-	char *n_name = calloc(strlen(name), sizeof(char)); // Copy of string for convience
+	char *n_name = calloc(strlen(name) + 1, sizeof(char)); // Copy of string for convience
 	strcpy(n_name, name);
 
 	n_label->name = n_name;
@@ -470,9 +474,33 @@ char *next_token() {
 
 // Free all memory used by program
 void free_memory() {
-	free_ll(tokens);
-	free_ll(label_def);
-	free_ll(label_ref);
+	del_ll(tokens);
+
+	ll_iter_rewind(label_def);
+	Label_t *item = ll_iter_next(label_def);
+
+	while (item != NULL) {
+		free(item->name);
+		free(item);
+		item = ll_iter_next(label_def);
+	}
+
+	// Free list
+	del_ll(label_def);
+
+
+	ll_iter_rewind(label_ref);
+	item = ll_iter_next(label_ref);
+
+	while (item != NULL) {
+		free(item->name);
+		free(item);
+		item = ll_iter_next(label_ref);
+	}
+
+	// Free list
+	del_ll(label_ref);
+
 	free_ll(output);
 	free(out_full);
 }

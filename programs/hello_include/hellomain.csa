@@ -1,4 +1,4 @@
-#INCLUDE ../programs/hellochar.csa
+#INCLUDE ../programs/hello_include/hellochar.csa
 
 main:
 -- %R0						-- Char to print
