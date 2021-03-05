@@ -18,8 +18,8 @@ typedef struct {
 	SimpleCoreState interupt;
 } SimpleCore;
 
-int do_cycle(SimpleCore *core);
-int do_opcode(SimpleCore *core);
+void do_cycle(SimpleCore *core);
+void do_opcode(SimpleCore *core);
 
 int main(int argc, char *argv[]) {
 	if (argc < 2) {
@@ -46,9 +46,12 @@ int main(int argc, char *argv[]) {
 	while (true) {
 		do_cycle(core);
 	}
+
+	// Should never get here
+	return 0;
 }
 
-int do_cycle(SimpleCore *core) {
+void do_cycle(SimpleCore *core) {
 	static int timer = 0x100;
 
 	// If timer is zero, make interupt
@@ -83,7 +86,7 @@ int do_cycle(SimpleCore *core) {
 	do_opcode(core);
 }
 
-int do_opcode(SimpleCore *core) {
+void do_opcode(SimpleCore *core) {
 	// Opcode to run
 	uint16_t opcode = core->memory[core->regs[PC]++];
 

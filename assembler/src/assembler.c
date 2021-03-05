@@ -139,7 +139,7 @@ int proc_instr() {
 		result = 0x2000;
 
 		Parse_t *t = next_num_or_label();
-		if (t->type = LABEL) {
+		if (t->type == LABEL) {
 			add_label_ref(ll_len(output), t->value.name, 0xFF, 0);
 		} else {
 			result |= t->value.number & 0xFF;
@@ -152,7 +152,7 @@ int proc_instr() {
 		result = 0x3000;
 
 		Parse_t *t = next_num_or_label();
-		if (t->type = LABEL) {
+		if (t->type == LABEL) {
 			add_label_ref(ll_len(output), t->value.name, 0xFF, 8);
 		} else {
 			result |= (t->value.number >> 8) & 0xFF;
@@ -180,7 +180,7 @@ int proc_instr() {
 		result = 0x7000;
 
 		Parse_t *t = next_num_or_label();
-		if (t->type = LABEL) {
+		if (t->type == LABEL) {
 			add_label_ref(ll_len(output), t->value.name, 0xFF, 0);
 		} else {
 			result |= t->value.number & 0xFF;
@@ -204,7 +204,7 @@ int proc_instr() {
 		result = 0xB000;
 
 		Parse_t *t = next_num_or_label();
-		if (t->type = LABEL) {
+		if (t->type == LABEL) {
 			add_label_ref(ll_len(output), t->value.name, 0xFF, 0);
 		} else {
 			result |= t->value.number & 0xFF;
@@ -218,7 +218,7 @@ int proc_instr() {
 		result |= expect_reg() << 8;
 
 		Parse_t *t = next_num_or_label();
-		if (t->type = LABEL) {
+		if (t->type == LABEL) {
 			add_label_ref(ll_len(output), t->value.name, 0xFF, 0);
 		} else {
 			result |= t->value.number & 0xFF;
