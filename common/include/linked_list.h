@@ -6,13 +6,12 @@
 
 struct linked_node {
     void *value;
-    struct linked_node *next;
+    struct linked_node *next, *prev;
 };
 
 typedef struct ll {
     struct linked_node *head;
     struct linked_node *tail;
-    struct linked_node *iter_prev;
     struct linked_node *iter;
     size_t len;
 } ll_t;
@@ -20,7 +19,7 @@ typedef struct ll {
 ll_t *new_ll(void);                  		// Create a new blank list
 void del_ll(ll_t *list);             		// Delete list
 void ll_add(ll_t *list, void *data); 		// Add value to end of list
-void ll_add_start(ll_t *list, void *data); 	// Add value to end of list
+void ll_add_start(ll_t *list, void *data); 	// Add value to start of list
 size_t ll_len(ll_t *list);           		// Get length of linked list
 
 void ll_iter_rewind(ll_t *list);          // Restart iterator

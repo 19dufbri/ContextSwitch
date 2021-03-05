@@ -7,7 +7,6 @@ ll_t *new_ll(void) {
 
     list->head = NULL;
     list->tail = NULL;
-    list->iter_prev = NULL;
     list->iter = NULL;
     list->len = 0;
 
@@ -27,9 +26,10 @@ void del_ll(ll_t *list) {
 void ll_add(ll_t *list, void *data) {
     struct linked_node *next = malloc(sizeof(struct linked_node));
 
-    if (list->tail != NULL)
+    if (list->tail != NULL) 
         list->tail->next = next;
 
+    next->prev = list->tail;
     list->tail = next;
 
     next->value = data;
@@ -45,6 +45,11 @@ void ll_add_start(ll_t *list, void *data) {
     struct linked_node *next = malloc(sizeof(struct linked_node));
 
     next->next = list->head;
+
+    if (list->head != NULL) 
+        list->head->prev = next;
+
+    next->prev = NULL;
     list->head = next;
 
     if (list->tail == NULL)
@@ -58,28 +63,26 @@ size_t ll_len(ll_t *list) {
 }
 
 void ll_iter_rewind(ll_t *list) {
-    list->iter_prev = NULL;
     list->iter = list->head;
 }
 
 void *ll_iter_next(ll_t *list) {
     if (list->iter != NULL) {
-        list->iter_prev = list->iter;
+        void *result = list->iter->value;
         list->iter = list->iter->next;
-        return list->iter_prev->value;
-    }
-    else {
+        return result;
+    } else {
         return NULL;
     }
 }
 
 void ll_remove_iter(ll_t *list) {
-    if (list->iter_prev != NULL && list->iter != NULL) {
-        list->iter_prev->value = list->iter->value;
-        list->iter_prev->next = list->iter->next;
-        free(list->iter);
-        list->iter = list->iter_prev;
-        list->iter_prev = NULL;
+    // TODO: Allow removing last elem?
+    if (list->iter != NULL && list->iter->prev != NULL) {
+        struct linked_node *removed = list->iter->prev;
+        removed->prev->next = list->iter;
+        list->iter->prev = removed->prev;
+        free(removed);
         list->len--;
     }
 }
@@ -88,20 +91,17 @@ void ll_add_iter(ll_t *list, void *data) {
     if (list->iter == NULL) {
         // New or end of list
         ll_add(list, data);
-    } else if (list->iter_prev == NULL) {
-        // Beginning of existing list
-        struct linked_node *next = malloc(sizeof(struct linked_node));
-        next->next = list->head;
-        next->value = data;
-        list->head = next;
-        list->len++;
+    } else if (list->iter->prev == NULL) {
+        // Beginning of list
+        ll_add_start(list, data);
     } else {
         // General Case
         struct linked_node *next = malloc(sizeof(struct linked_node));
-        next->next = list->iter;
         next->value = data;
-        list->iter_prev->next = next;
-        list->iter = next;
+        next->next = list->iter;
+        next->prev = list->iter->prev;
+        list->iter->prev = next;
+        next->prev->next = next;
         list->len++;
     }
 }
