@@ -9,6 +9,7 @@
 int main(int argc, char *argv[]) {
 	// TODO: Better checking
 	if (argc < 2) {
+		printf("no.\n");
 		return -1;
 	}
 
@@ -19,28 +20,20 @@ int main(int argc, char *argv[]) {
 		return -1;
 	}
 
-	ll_t *tokens = tokenize(infile);
+	ll_t *tokens_list = tokenize_file(infile);
 	fclose(infile);
+
+	ll_iter_rewind(tokens_list);
 	// End inital tokenization
 	
 	// Preprocessor
-	size_t len = ll_len(tokens);
-	Token_t *tok_arr[] = calloc(len, sizeof(Token_t *));
-
-	ll_iter_rewind(tokens);
-	Token_t *c_tok;
-	while ((c_tok = ll_iter_next(tokens)) != NULL) {
-		tok_arr[i] = c_tok;
-	}
+	char *tokens_array[] = preprocess(tokens_list);
+	del_ll(tokens_list); // Cleared by preprocess, can now free
 	// End preprocessor
 
-	// Free them!
-	del_ll(tokens);
-
-	parse_file(tok_arr, len);
-
-	// Free memory
-	// TODO Free Items
-	free(tok_arr);
+	// Free them! 
+	// TODO: Valgrind
+	free(tokens_array);
+	
 	return 0;
 }
