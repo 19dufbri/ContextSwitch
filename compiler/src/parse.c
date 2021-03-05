@@ -2,47 +2,66 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+
 #include "linked_list.h"
 
 typedef enum {
-	OPEN_P,  	//
-	CLOSE_P, 	//
-	STRING,		//
-	NUMBER,		//
-	VAR,		//
-	FUN,		//
-	OPEN_B, 	//
-	CLOSE_B, 	//
-	IDENT, 		//
-	RETURN,		//
-	SEMICOLON,	//
-	EQUALS		//
-} TokenType_t;
+	OPEN_P,		// (			GOOD
+	CLOSE_P,	// )			GOOD
+	STRING,		// "..."		GOOD
+	NUMBER,		// 0x00			GOOD
+	OPEN_B,		// {			GOOD
+	CLOSE_B,	// }			GOOD
+	IDENT,		// identifier	GOOD
+	RETURN,		// return 		GOOD
+	SEMICOLON, 	// ;			GOOD
+	EQUALS,		// =			GOOD
+	DEQUALS,	// ==
+	COMMA,		// ,
+	IF,			// if 			GOOD
+	ELSE,		// else 		GOOD
+	FOR,		// for 			GOOD
+	PLUS,		// +
+	MINUS,		// -
+	MULT,		// *
+	DIV,		// /
+	INCR,		// ++
+	DECR,		// --
+	XOR,		// ^
+	DXOR,		// ^^
+	OR,			// |
+	DOR,		// ||
+	AND,		// &
+	DAND,		// &&
+	LT,			// <
+	GT,			// >
+	LTE,		// <=
+	GTE,		// >=
+	NEQ,		// !=
+	NOT			// !
+	BLOCK,		// { ... }
+	CONDITION,	// ( ... )
+	VARDEF,
+	FUNDEF
+} TokenParseType_t;
 
 typedef struct {
-	TokenType_t type;
+	TokenParseType_t type;
 	union {
 		char *string;
 		uint16_t number;
 	} value;
 } Token_t;
 
-typedef enum {
-	CUNIT,
-	PVAR,
-	PFUN,
-	STRLIT,
-	INTLIT
-} ParseType_t;
-
 typedef struct Parse {
-	ParseType_t type;
+	TokenParseType_t type;
 	char *name;
 	union {
-		struct Parse *child;
+		struct Parse *lchild;
+		struct Parse *rchild;
+		ll_t *children;
 		char *string;
 		uint16_t number;
-		ll_t *children;
 	} value;
 } Parse_t;
 
@@ -55,45 +74,16 @@ ll_t *tokens;
 void tokenize(FILE *infile);
 int get_token(char *in);
 
-int main(int argc, char *argv[]) {
-	if (argc < 2) {
-		return -1;
-	}
-
-	tokens = new_ll();
-
-	FILE *infile = fopen(argv[1], "r");
-	if (infile == 0) {
-		fprintf(stderr, "IO Error\n");
-		return -1;
-	}
-	printf("B4 Tokenize\n");
-	tokenize(infile);
-	fclose(infile);
-	printf("After Tokenize\n");
-
-	ll_iter_rewind(tokens);
-	Token_t *c_tok;
-	while ((c_tok = ll_iter_next(tokens)) != NULL) {
-		printf("Token Type %d\n", c_tok->type);
-		if (c_tok->type == IDENT) {
-			printf("  Value: %s\n", c_tok->value.string);
-		}
-	}
-
-	parse_file(tokens);
-
-	return 0;
-}
-
-Parse_t *parse_file(ll_t *tokens) {
+// Parse all statements in a file
+Parse_t *parse_file(Token_t *tokens[], size_t len) {
 	Token_t *token;
-	ll_iter_rewind(tokens);
+	int i = 0;
 
-	while ((token = ll_iter_next(tokens)) != NULL) {
+	while (i < len) {
+		token = tokens[i++];
 		switch (token->type) {
 			case VAR:
-				parse_var(tokens); // TODO: Use result
+				parse_var(tokens, &i, len); // TODO: Use result
 				break;
 			case FUN:
 				printf("Got FUN\n");
@@ -108,8 +98,9 @@ Parse_t *parse_file(ll_t *tokens) {
 	return NULL;
 }
 
-Parse_t *parse_var(ll_t *tokens) {
-	Token_t *token = ll_iter_next(tokens);
+// Parse a variable declaration
+Parse_t *parse_var(Token_t *tokens[], int *i, size_t len) {
+	Token_t *token = tokens[(*i)++];
 
 	if (token->type != IDENT) {
 		fprintf(stderr, " >> %d <<\n", token->type);
@@ -120,10 +111,10 @@ Parse_t *parse_var(ll_t *tokens) {
 	result->type = VAR;
 	result->name = token->value.string;
 
-	token = ll_iter_next(tokens);
+	token = tokens[(*i)++];
 	switch (token->type) {
 		case EQUALS:
-			result->value.child = parse_rvalue(tokens);
+			result->value.child = parse_rvalue(tokens, i, len);
 			break;
 		case SEMICOLON:
 			result->value.child = NULL; // Signifier of no rvalue
@@ -137,12 +128,15 @@ Parse_t *parse_var(ll_t *tokens) {
 	return result;
 }
 
-Parse_t *parse_rvalue(ll_t *tokens) {
+// Parse "right side" of equals, also a value expression
+Parse_t *parse_rvalue(Token_t *tokens[], int *i, size_t len) {
 	// Expects only int or string for the moment
-	Token_t *token = ll_iter_next(tokens);
+	Token_t *token = tokens[(*i)++];
 
 	Parse_t *result = malloc(sizeof(Parse_t));
 
+	// See if variable, or int/string literal
+	// TODO : More complex rvalues
 	switch (token->type) {
 		case STRING:
 			result->type = STRLIT;
@@ -152,120 +146,23 @@ Parse_t *parse_rvalue(ll_t *tokens) {
 			result->type = INTLIT;
 			result->value.number = token->value.number;
 			break;
+		case IDENT:
+			result->type = PIDENT;
+			result->value.string = token->value.string;
+			break;
 		default:
 			fprintf(stderr, " >> %d <<\n", token->type);
 			syntax_error("rvalue parse error");
 			break;
 	}
 
-	if ((token = ll_iter_next(tokens))->type != SEMICOLON) {
+	// Check for end of line
+	if ((token = tokens[(*i)++])->type != SEMICOLON) {
 		syntax_error("Expected semicolon");
 	}
 
 	return result;
 }
-
-void tokenize(FILE *infile) {
-	int idex, i;
-	size_t len;
-	char *line = NULL;
-
-	while (getline(&line, &len, infile) != -1) {
-		idex = 0;
-		i = 0;
-		while(isspace(line[i])) i++;
-		//printf("Char b4 ");
-		while (idex = get_token(line + i)) {
-			i += idex;
-			while(isspace(line[i])) i++;
-		}
-		free(line);
-		line = NULL;
-	}
-}
-
-int get_token(char *in) {
-	int num_used = 1;
-	// TODO Strip whitespace
-	if (strlen(in) == 0) {
-		return 0;
-	}
-
-	if (in[0] == ';') {
-		Token_t *newTok = malloc(sizeof(Token_t));
-		newTok->type = SEMICOLON;
-		ll_add(tokens, newTok);
-	} else if (in[0] == '=') {
-		Token_t *newTok = malloc(sizeof(Token_t));
-		newTok->type = EQUALS;
-		ll_add(tokens, newTok);
-	} else if (in[0] == '(') {
-		Token_t *newTok = malloc(sizeof(Token_t));
-		newTok->type = OPEN_P;
-		ll_add(tokens, newTok);
-	} else if (in[0] == ')') {
-		Token_t *newTok = malloc(sizeof(Token_t));
-		newTok->type = CLOSE_P;
-		ll_add(tokens, newTok);
-	} else if (in[0] == '{') {
-		Token_t *newTok = malloc(sizeof(Token_t));
-		newTok->type = OPEN_B;
-		ll_add(tokens, newTok);
-	} else if (in[0] == '{') {
-		Token_t *newTok = malloc(sizeof(Token_t));
-		newTok->type = CLOSE_B;
-		ll_add(tokens, newTok);
-	} else if (strncmp(in, "var", 3) == 0) {
-		Token_t *newTok = malloc(sizeof(Token_t));
-		newTok->type = VAR;
-		ll_add(tokens, newTok);
-		num_used = 3;
-	} else if (strncmp(in, "fun", 3) == 0) {
-		Token_t *newTok = malloc(sizeof(Token_t));
-		newTok->type = FUN;
-		ll_add(tokens, newTok);
-		num_used = 3;
-	} else if (strncmp(in, "return", 6) == 0) {
-		Token_t *newTok = malloc(sizeof(Token_t));
-		newTok->type = RETURN;
-		ll_add(tokens, newTok);
-		num_used = 6;
-	}
-
-	// Done with easy
-	else if (in[0] == '\"') {
-		// String
-		Token_t *newTok = malloc(sizeof(Token_t));
-		newTok->type = STRING;
-
-		int idex = strcspn(in+1, "\"");
-		newTok->value.string = calloc(sizeof(char), idex);
-		strncpy(newTok->value.string, in+1, idex-1);
-		newTok->value.string[idex-1] = '\0';
-
-		ll_add(tokens, newTok);
-		num_used = idex+1;
-	} else if (isdigit(in[0])) {
-		// Number
-		Token_t *newTok = malloc(sizeof(Token_t));
-		newTok->type = NUMBER;
-
-		sscanf(in, "%hi%n", &newTok->value.number, &num_used);
-		ll_add(tokens, newTok);
-	} else {
-		// Must be identifier
-		Token_t *newTok = malloc(sizeof(Token_t));
-		newTok->type = IDENT;
-
-		newTok->value.string = calloc(sizeof(char), 32);
-
-		// Reading character limited strings makes me want to cry
-		sscanf(in, "%31[abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_]%n", newTok->value.string, &num_used);
-
-		ll_add(tokens, newTok);
-	}
-	return num_used;
-} 
 
 void syntax_error(char *message) {
 	fprintf(stderr, "%s\n", message);
