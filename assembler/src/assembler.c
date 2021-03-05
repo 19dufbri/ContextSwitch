@@ -430,8 +430,6 @@ void add_label_ref(uint16_t addr, char *name, uint16_t mask, uint8_t shift) {
 // Tokenize all lines of the input file
 char *delim = " \t\n\r,";
 void tokenize(ll_t *result, FILE *infile) {
-	// ll_iter_rewind(result);
-
 	// Create list for tokens
 	char *line = NULL;
 	char *token = NULL;
@@ -452,7 +450,6 @@ void tokenize(ll_t *result, FILE *infile) {
 			char *new_t = malloc(strlen(token) + 1);
 			strcpy(new_t, token);
 			ll_add_iter(result, new_t);
-			ll_iter_next(result);
 
 			token = strtok(NULL, delim);
 		}
@@ -487,7 +484,6 @@ void free_memory() {
 
 	// Free list
 	del_ll(label_def);
-
 
 	ll_iter_rewind(label_ref);
 	item = ll_iter_next(label_ref);

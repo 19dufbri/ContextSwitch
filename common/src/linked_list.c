@@ -80,7 +80,10 @@ void ll_remove_iter(ll_t *list) {
     // TODO: Allow removing last elem?
     if (list->iter != NULL && list->iter->prev != NULL) {
         struct linked_node *removed = list->iter->prev;
-        removed->prev->next = list->iter;
+        if (removed->prev != NULL)
+            removed->prev->next = list->iter;
+        if (removed == list->head)
+            list->head = removed->next;
         list->iter->prev = removed->prev;
         free(removed);
         list->len--;
