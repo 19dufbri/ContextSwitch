@@ -4,6 +4,7 @@
 #include <stdlib.h>
 
 #include "tokenize.h"
+#include "preprocessor.h"
 #include "linked_list.h"
 
 int main(int argc, char *argv[]) {
@@ -27,13 +28,16 @@ int main(int argc, char *argv[]) {
 	// End inital tokenization
 	
 	// Preprocessor
-	char *tokens_array[] = preprocess(tokens_list);
+	ssize_t tokens_length;
+	char **tokens_array = preprocess(tokens_list, &tokens_length);
 	del_ll(tokens_list); // Cleared by preprocess, can now free
 	// End preprocessor
 
-	// Free them! 
-	// TODO: Valgrind
+	// Begin Parsing
+	Parse_t *ast = parse(tokens_array);
 	free(tokens_array);
-	
+	// End parsing
+
+	// TODO: Valgrind
 	return 0;
 }

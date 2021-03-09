@@ -1,7 +1,15 @@
+#include <stdio.h>
+#include <string.h>
+
+#include "tokenize.h"
 #include "linked_list.h"
 
+static char *eat_tok_pre(ll_t *tokens);
+static void found_pre(ll_t *tokens);
+static void preprocess_error(char *message);
+
 // Preprocess all the tokens in a list and clear the list
-char **preprocess(ll_t *tokens) {
+char **preprocess(ll_t *tokens, ssize_t *length) {
 	char *token;
 
 	// Normal preprocesser tings
@@ -14,10 +22,21 @@ char **preprocess(ll_t *tokens) {
 			found_pre(tokens);
 		}
 	}
+	
+	// Move everything over to the array
+	*length = ll_len(tokens);
+	char **result = calloc(*length, sizeof(char *));
+	ll_iter_rewind(tokens);
+	int i = 0;
+	while ((token = ll_iter_next(tokens)) != NULL) {
+		result[i++] = token;
+	}
+
+	return result;
 }
 
 // Get token and remove it from the iterator, normal operation
-static char *eat_tok_pre(tokens) {
+static char *eat_tok_pre(ll_t *tokens) {
 	char *token = ll_iter_next(tokens);
 	if (token == NULL) {
 		preprocess_error("Unexpected EOF!");
@@ -27,26 +46,30 @@ static char *eat_tok_pre(tokens) {
 }
 
 // Found a preprocessor directive
-static void found_pre(tokens) {
+static void found_pre(ll_t *tokens) {
 	char *token = eat_tok_pre(tokens);
 	
 	if (strcmp(token, "include") == 0) {
 		// Include statement, followed by file type
 		token = eat_tok_pre(tokens);
-		if (strcmp(token, "src") == 0) {
-			// C Source file
-			// Load contents of new file
-			FILE *infile = fopen(token, "r");
-			if (infile == NULL) {
-				preprocess_error("Tried to include bad file!");
-			}
-			ll_t *n_tokens = tokenize(infile);
-			fclose(infile);
 
-			// Merge token lists
-		} else {
-
+		// Header file
+		// Load contents of new file
+		FILE *infile = fopen(token, "r");
+		if (infile == NULL) {
+			preprocess_error("Tried to include bad file!");
 		}
+		ll_t *n_tokens = tokenize_file(infile);
+		fclose(infile);
+		// Done loading
+
+		// Merge token lists
+		while ((token = ll_iter_next(n_tokens)) != NULL) {
+			ll_add_iter(tokens, token);
+		}
+
+		// TODO: Make it not n^k, only n (because every time an include, will start over currently)
+		ll_iter_rewind(tokens);
 	}
 }
 
