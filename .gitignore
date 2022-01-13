@@ -54,3 +54,6 @@ dkms.conf
 *.tgn
 virtual-machine/csa-vm
 compiler/csa-comp
+
+# Editior Files
+.idea/
