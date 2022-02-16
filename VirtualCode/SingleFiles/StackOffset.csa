@@ -1,0 +1,57 @@
+﻿main:
+LIR     #0x1000,    %R6                 -- Setup SP in sane location
+
+LIR     $goodChar,  %R3
+LOA     %R3,        %R1                 -- Load 'Y' into R1
+PSH     %R1                             -- Put 'Y' on stack
+
+LIR     $badChar,   %R3
+LOA     %R3,        %R0                 -- Setup bad char as default
+
+RRO     %R6,        %R0,        #-1     -- Should get 'Y'
+
+IOW     %R0,        #0x00               -- Print out character
+
+LIR     $newline,   %R3
+LOA     %R3,        %R0
+IOW     %R0,        #0x00
+
+POP     %R1
+
+LIR     $AChar,     %R3
+LOA     %R3,        %R1
+PSH     %R1
+
+IOW     %R1,        #0x00
+
+LIR     $subroutine, %R1
+JSR     %R1
+
+POP     %R1
+IOW     %R1,        #0x00
+
+LIR     $newline,   %R3
+LOA     %R3,        %R0
+IOW     %R0,        #0x00
+
+JMP     $goodbye
+
+goodChar:
+.'Y'
+badChar:
+.'N'
+AChar:
+.'A'
+newline:
+.0x0A
+
+subroutine:
+RRO     %R6,    %R0,    #-2     -- First non-return stack
+IOW     %R0,    #0
+ADI     #1,     %R0
+IOW     %R0,    #0
+WRO     %R0,    %R6,    #-2     -- Write back
+RET
+
+goodbye:
+IOW     %R0,    #0xFF

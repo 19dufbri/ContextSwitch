@@ -1,0 +1,41 @@
+#INCLUDE ./HelloChar.csa
+
+main:
+-- Print the string "Hi\r\n"
+LIR     $data,          %R0     -- String to print
+LIR 	#0x1000,	    %R6		-- Stack Pointer
+JSR     $printstring
+
+-- End the program
+LIR     #0x00,          %R0
+JMP     $goodbye
+
+printstring:
+PSH		%R1
+PSH		%R2
+PSH		%R3
+PSH		%R4
+-- %R0						-- Addr to print
+MOV     %R0,        %R1     -- Char to print
+LIR		$end,		%R2		-- End of function
+LIR		#0x01,		%R3		-- One for NULL check
+-- %R5						-- Internal Use
+-- %R6						-- Stack Pointer
+-- %R7						-- Program Counter
+
+	printloop:
+	LOA 	%R1,	%R0				-- Load first char into R0
+	JGT		%R3,	%R0,	%R2 	-- Jump to end if character is null
+	JSR     $printchar              -- Print character
+	ADI		#0x01,	%R1				-- Increment R1
+	JMP 	$printloop
+
+end:
+POP		%R4
+POP		%R3
+POP		%R2
+POP		%R1
+RET
+
+data:	-- String to print
+."Pussy, Dick, AND Cum"

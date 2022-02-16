@@ -1,0 +1,333 @@
+RoutinePrintChar:
+RRO     %R6,    %R5,    #-2
+IOW		%R5,	#00
+RET
+
+-- void SetMem(int addr, int value);
+RoutineSetMem:
+RRO %R6, %R1, #-3   -- addr
+RRO %R6, %R2, #-2   -- value
+STO %R2, %R1
+RET
+
+-- int ReadMem(int addr);
+RoutineReadMem:
+RRO %R6, %R1, #-2   -- addr
+LOA %R1, %R0
+RET
+
+
+RoutinePrintLine:
+RRO %R6, %R0, #-2
+PSH %R0
+JSR $RoutinePrintString
+POP %R0
+
+LIR #0xD, %R0
+IOW	%R0,#00
+LIR #0xA, %R0
+IOW	%R0,#00
+
+RET
+
+
+RoutinePrintString:
+PSH		%R1
+PSH		%R2
+PSH		%R3
+PSH		%R4
+-- %R0						-- Addr to print
+MOV     %R0,        %R1     -- Char to print
+LIR		$end,		%R2		-- End of function
+LIR		#0x01,		%R3		-- One for NULL check
+LIR		$printloop, %R4		-- Addr of loop head
+-- %R5						-- Internal Use
+-- %R6						-- Stack Pointer
+-- %R7						-- Program Counter
+
+	printloop:
+	LOA 	%R1,	%R0				-- Load first char into R0
+	JGT		%R3,	%R0,	%R2 	-- Jump to end if character is null
+	IOW		%R0,	#00				-- Print character
+	ADI		#0x01,	%R1				-- Increment R1
+	JMP 	%R4
+
+end:
+POP		%R4
+POP		%R3
+POP		%R2
+POP		%R1
+RET
+
+
+
+
+
+AddResult:
+.0
+.0
+
+RoutineGetResultMemAddr:
+LIR $AddResult, %R0
+RET
+
+
+
+
+RoutineAddInts:
+RRO %R6, %R0, #-6       -- Addr of Result
+RRO %R6, %R1, #-4       -- int al
+RRO %R6, %R2, #-2       -- int bl
+
+-- Do low addition and write out
+ADD %R1, %R2, %R3 -- %R3 = (al + bl)
+WRO %R3, %R0, #1
+
+-- Check if sign bits are the same
+LIR #0x8000, %R0
+AND %R0, %R1, %R3   -- 0x8000 & al 
+AND %R3, %R2, %R3   -- 0x8000 & al & bl
+JGT %R0, %R3, $StdLibAddIntCarry -- (-65565 >= -65565(0x8000 & al & bl))
+
+-- Different operands, check if result & 0x8000 == 0
+-- Write low byte out
+AND %R0, %R1, %R1
+AND %R0, %R2, %R2
+RRO %R6, %R3, #-6
+RRO %R3, %R3, #1
+AND %R0, %R3, %R3
+XOR %R1, %R2, %R1 -- al[15] | bl[15]
+XOR %R0, %R3, %R3
+AND %R1, %R3, %R3 -- (al[15] | bl[15]) & !(al+bl)[15]
+
+-- 0x8000 if we should carry
+LIR #0x8000, %R0
+LIR #0, %R4
+JGT %R0, %R3, $StdLibAddIntCarry
+JMP $StdLibAddIntNoCarry
+
+StdLibAddIntCarry:
+LIR #1, %R4
+StdLibAddIntNoCarry:
+RRO %R6, %R1, #-5   -- int ah
+RRO %R6, %R2, #-3   -- int ah
+
+ADD %R4, %R1, %R1
+ADD %R1, %R2, %R1
+
+-- Write out high byte
+RRO %R6, %R0, #-6
+WRO %R1, %R0, #0
+RET
+
+
+
+
+
+
+
+RoutinePrintHex:
+PSH %R1
+PSH %R2
+PSH %R3
+PSH %R4
+
+RRO %R6, %R0, #-6       -- R0: Message
+                        -- R1: Table offset
+LIR #0x3, %R2           -- R2: i
+LIR #0, %R3             -- R3: 0
+                        -- R4: Random immediate
+
+PrintHexLoop:
+PSH %R0
+LIR #0x4, %R4
+PSH %R4
+JSR $RoutineRotateLeft
+POP %R5
+POP %R5
+
+LIR #0x000F, %R4
+AND %R0, %R4, %R1
+LIR $PrintHexTable, %R4
+ADD %R1, %R4, %R4
+LOA %R4, %R1
+
+PSH %R1
+JSR $RoutinePrintChar
+POP %R5
+
+ADI #-1, %R2
+JGT %R2, %R3, $PrintHexLoop
+POP %R4
+POP %R3
+POP %R2
+POP %R1
+RET
+
+PrintHexTable:
+."0123456789ABCDEF"
+
+
+
+
+
+
+RoutineRotateLeft:
+PSH %R1
+PSH %R2
+PSH %R3
+PSH %R4
+RRO %R6, %R1, #-6 -- Shift
+RRO %R6, %R0, #-7 -- Amount
+
+RotateLeftLoop:
+LIR #0x0000, %R3
+JGT %R3, %R1, $RotateLeftEnd
+ADI #-1, %R1
+LIR #0x8000, %R3
+AND %R3, %R0, %R4
+LIR #-1, %R3
+ADD %R0, %R0, %R0
+JGT %R3, %R4, $RotateLeftAddOne
+JMP $RotateLeftLoop
+
+RotateLeftAddOne:
+ADI #1, %R0
+JMP $RotateLeftLoop
+
+RotateLeftEnd:
+POP %R4
+POP %R3
+POP %R2
+POP %R1
+RET
+
+
+
+
+
+RoutineNewShort:
+LIR $NewShortCounter, %R1
+LOA %R1, %R0
+ADI #0x01, %R0
+STO %R0, %R1
+RET
+
+NewShortCounter:
+.0xDFFF
+
+
+
+
+
+
+
+--int b = inb
+--int result = 0;
+--for (short i = 0; i < 16; i++) {
+--    if (1 << i & inA) {
+--        result += b;
+--    }
+--    b <<= 1;
+--}
+
+RoutineMultiply:
+LIR #0, %R0
+PSH %R0
+PSH %R0
+RRO %R6, %R0, #-6   -- Result addr
+RRO %R6, %R1, #-5   -- inA
+
+-- b = inb
+RRO %R6, %R2, #-4   -- inB
+WRO %R2, %R6, #-1   -- B->Temp16
+
+-- Clear result
+LIR #0, %R4
+WRO %R4, %R0, #0
+WRO %R4, %R0, #1
+
+-- int i = 15
+LIR #15, %R3
+
+MultiplyLoop:
+
+
+-- i -= 1
+ADI #-1, %R3
+
+-- i >= 0
+LIR #0, %R4
+JGT %R3, %R4, $MultiplyLoop
+
+MultiplyEnd:
+POP %R5
+POP %R5
+RET
+
+
+
+
+
+
+RoutineShiftLeftInt:
+PSH %R1
+PSH %R2
+PSH %R3
+PSH %R4
+
+-- R0: Low byte
+-- R1: High byte
+
+RRO %R6, %R1, #-8 -- Result addr
+RRO %R6, %R0, #-6 -- To shift
+
+LIR #0x8000, %R3
+AND %R3, %R0, %R4
+LIR #-1, %R3
+ADD %R0, %R0, %R0
+WRO %R0, %R1, #1
+RRO %R6, %R0, #-7
+ADD %R0, %R0, %R0
+JGT %R3, %R4, $ShiftLeftIntAddOne
+JMP $ShiftLeftIntEnd
+
+ShiftLeftIntAddOne:
+ADI #1, %R0
+
+ShiftLeftIntEnd:
+WRO %R0, %R1, #0
+POP %R4
+POP %R3
+POP %R2
+POP %R1
+RET
+
+
+
+
+RoutineGetRawReg:
+RRO %R6, %R1, #-2
+LIR #0xF, %R2
+AND %R1, %R2, %R1
+
+PSH %R1
+LIR #4, %R0
+PSH %R0
+JSR $RoutineRotateLeft
+POP %R5
+POP %R5
+
+LIR $GetRawRegBase, %R4
+LOA %R4, %R4
+XOR %R4, %R0, %R0
+LIR $GetRawRegResult, %R4
+STO %R0, %R4
+
+GetRawRegResult:
+.0
+
+RET
+
+GetRawRegBase:
+.0x6000

@@ -1,0 +1,9 @@
+﻿-- void memcpy(int dest, int src, int n);
+Procedurememcpy:
+RRO %R6, %R0, #-4   -- dest
+RRO %R6, %R1, #-3   -- src
+RRO %R6, %R2, #-2   -- n
+
+
+
+RET

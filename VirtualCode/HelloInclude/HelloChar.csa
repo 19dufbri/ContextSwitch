@@ -1,0 +1,6 @@
+printchar:
+IOW		%R0,	#0x00
+RET
+
+goodbye:
+IOW     %R0,    #0xFF

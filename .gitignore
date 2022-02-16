@@ -61,3 +61,4 @@ compiler/csa-comp
 *.sln
 *.sln.DotSettings.user
 bin/
+obj/

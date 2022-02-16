@@ -1,0 +1,71 @@
+﻿LIR #0xF000, %R6
+JSR $Routinemain
+IOW %R0, #0xFF
+
+StdLibMultiply:
+LDI #0,  %R0        -- Result
+RRO %R6, %R1, #-3   -- int a
+RRO %R6, %R2, #-2   -- int b
+LDI #0x1, %R3       -- 0000 0000  0000 0001
+
+    StdLibMultiplyLoop:
+    ADD %R2, %R2, %R2   -- b << i
+    ADD %R3, %R3, %R3   -- i << i
+    RR0 %R6, %R1, #-3
+    AND %R1, %R3, %R1   -- a & (1 << i)
+    LDI #1, %R4
+    JGT %R1, %R4, %R2
+
+RET
+
+StdLibAdd32:
+RRO %R6, %R0, #-6       -- Addr of Result
+RRO %R6, %R1, #-5       -- int al
+RRO %R6, %R2, #-3       -- int bl
+
+-- Check if sign bits are the same
+LDI #0x8000, %R0
+AND %R0, %R1, %R3   -- al & 0x8000
+AND %R0, %R2, %R4   -- bl & 0x8000
+XOR %R3, %R4, %R0   -- al & 0x8000 ^ bl & 0x8000
+LDI #0x8000, %R3
+XOR %R0, %R3, %R3   -- !(al & 0x8000 ^ bl & 0x8000)
+
+-- Jump to same if sign bits are the same (eg %R3 == 0x8000)
+LDI #0, %R0
+JGT %R0, %R3, $StdLibAdd32Same
+
+-- Different operands, no overflow chance
+ADD %R1, %R2, %R1
+-- Write low byte out
+RRO %R6, %R0, #-6
+WRO %R1, %R0, #0
+LDI #0, %R0
+JMP $StdLibAdd32NoCarried
+
+StdLibAdd32Same:
+LDI #0x8000, %R0
+AND %R0, %R1, %R3 -- (0x8000 & al)
+ADD %R1, %R2, %R1 -- (al + bl)
+AND %R0, %R1, %R0 -- (0x8000 & (al + bl))
+XOR %R0, %R3, %R2 -- (0x8000 & (al + bl)) ^ (0x8000 & al)
+
+-- Write low byte out
+RRO %R6, %R0, #-6
+WRO %R1, %R0, #0
+
+LDI #0, %R0
+JGT %R0, %R2, $StdLibAdd32NoCarried
+StdLibAdd32Carried:
+LDI #1, %R0
+StdLibAdd32NoCarried:
+RRO %R6, %R1, #-4   -- int ah
+RRO %R6, %R2, #-2   -- int ah
+
+ADD %R0, %R1, %R1
+ADD %R1, %R2, %R1
+
+-- Write out high byte
+RRO %R6, %R0, #-6
+WRO %R1, %R0, #1
+RET

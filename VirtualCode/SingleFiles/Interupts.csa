@@ -1,0 +1,55 @@
+main:
+LIR 	$User,	%S7 			-- Load ptr to user code into saved reg
+EIN								-- Jump to user code
+-- Fall through on interupt
+
+-- Interrupt Registers
+-- %R0      0 = Timer, 1 = User; then operand #1
+-- %R1      Link Register
+-- %R2      Immediate for checks
+-- %R3
+-- %R4
+-- %R5      Internal Use
+-- %R6      Stack
+-- %R7      PC
+OnInterrupt:    -- Every interrupt
+--BRK
+LIR 	#0x00,			%R2		-- Check if user
+LIR		$TimerInt,		%R1
+JGT     %R2,    %R0,    %R1     -- 0 < Int, eg Skip if user interrupt
+
+-- User Interrupt
+-- Print out "I" for user interrupt
+UserInt:
+LIR		#0x49,	%R0			-- 'I'
+IOW		%R0,		#0x00
+LIR		$EndISR,	%R1
+JMP 	%R1
+
+EndISR:
+EIN
+StartISR:
+-- Go back to interrupt handler
+LIR		$OnInterrupt, 	%R1
+JMP 	%R1
+
+TimerInt:
+-- Print out "\nT\n" for timer
+LIR		#0x0A,	%R0			-- '\n'
+IOW		%R0,	#0x00
+LIR		#0x54,	%R0			-- 'T'
+IOW		%R0,	#0x00
+LIR		#0x0A,	%R0			-- '\n'
+IOW		%R0,	#0x00
+LIR		$EndISR,	%R1
+JMP 	%R1
+
+-- User code
+User:
+LIR		$UserLoop,	%R1
+
+UserLoop:
+LIR		#0x55,	%R0			-- 'U'
+IOW		%R0,	#0x00
+INT
+JMP 	%R1
