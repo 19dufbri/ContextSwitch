@@ -60,3 +60,4 @@ compiler/csa-comp
 *.csproj
 *.sln
 *.sln.DotSettings.user
+bin/
