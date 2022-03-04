@@ -5,7 +5,7 @@ namespace Compiler.ParseTypes
 {
     public class ParseWhile : ParseStatement
     {
-        private readonly ParseRValue _condition;
+        private readonly ParseEqualityExpression _condition;
         private readonly Parse _blockOrStatement;
         
         public ParseWhile(List<string> tokens)
@@ -18,7 +18,7 @@ namespace Compiler.ParseTypes
                 ParseProgram.ReportError("Expected open parens");
             tokens.RemoveAt(0);
 
-            _condition = new ParseRValue(tokens);
+            _condition = new ParseEqualityExpression(tokens);
             
             if (tokens.First() != ")")
                 ParseProgram.ReportError("Expected close parens");

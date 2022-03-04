@@ -16,7 +16,7 @@ namespace Compiler.ParseTypes
 
         private readonly ParseValueType _valueType;
         private readonly string _constOrIdentValue;
-        private readonly ParseRValue _parenContent;
+        private readonly ParseEqualityExpression _parenContent;
         private readonly ParseFunctionCall _functionCall;
         
         public ParseValue(List<string> tokens)
@@ -38,7 +38,7 @@ namespace Compiler.ParseTypes
                 // Parenthesis
                 tokens.RemoveAt(0);
                 _valueType = ParseValueType.Parenthesis;
-                _parenContent = new ParseRValue(tokens);
+                _parenContent = new ParseEqualityExpression(tokens);
                 token = tokens.First();
                 tokens.RemoveAt(0);
                 if (token != ")")

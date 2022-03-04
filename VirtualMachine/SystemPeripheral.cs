@@ -1,10 +1,10 @@
 ﻿namespace VirtualMachine
 {
-    public class IOPeripheral : IPeripheral
+    public class SystemPeripheral : IPeripheral
     {
         public byte? RunCycle()
         {
-            throw new System.NotImplementedException();
+            return null;
         }
 
         public void AcknowledgeInterrupt(byte number)
@@ -14,7 +14,7 @@
 
         public void DoWrite(byte addr, ushort value)
         {
-            throw new System.NotImplementedException();
+            System.Environment.Exit(value);
         }
 
         public ushort DoRead(byte addr)

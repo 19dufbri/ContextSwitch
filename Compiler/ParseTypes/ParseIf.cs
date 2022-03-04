@@ -1,12 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 
 namespace Compiler.ParseTypes
 {
     public class ParseIf : ParseStatement
     {
-        private readonly ParseRValue _condition;
+        private readonly ParseEqualityExpression _condition;
         private readonly Parse _blockOrStatement;
         private readonly Parse _elseBlockOrStatement;
         
@@ -20,7 +19,7 @@ namespace Compiler.ParseTypes
                 ParseProgram.ReportError("Expected open parens");
             tokens.RemoveAt(0);
 
-            _condition = new ParseRValue(tokens);
+            _condition = new ParseEqualityExpression(tokens);
             
             if (tokens.First() != ")")
                 ParseProgram.ReportError("Expected close parens");

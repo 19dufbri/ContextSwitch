@@ -5,7 +5,7 @@ namespace Compiler.ParseTypes
 {
     public class ParseReturn : ParseStatement
     {
-        private readonly ParseRValue _returnValue;
+        private readonly ParseEqualityExpression _returnValue;
         public ParseReturn(List<string> tokens)
         {
             var token = tokens.First();
@@ -14,7 +14,7 @@ namespace Compiler.ParseTypes
             tokens.RemoveAt(0);
 
             if (tokens.First() != ";")
-                _returnValue = new ParseRValue(tokens);
+                _returnValue = new ParseEqualityExpression(tokens);
         }
 
         public override List<string> EmitInstructions()

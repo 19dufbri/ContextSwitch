@@ -6,7 +6,7 @@ namespace Compiler.ParseTypes
     public class ParseVariableAssignment : ParseStatement
     {
         private readonly string _name;
-        private readonly ParseRValue _definition;
+        private readonly ParseEqualityExpression _definition;
         public ParseVariableAssignment(List<string> tokens)
         {
             _name = tokens.First();
@@ -16,7 +16,7 @@ namespace Compiler.ParseTypes
                 ParseProgram.ReportError("Expected assignment");
             tokens.RemoveAt(0);
             
-            _definition = new ParseRValue(tokens);
+            _definition = new ParseEqualityExpression(tokens);
 
             if (tokens.First() != ";")
                 ParseProgram.ReportError("Expected semicolon");

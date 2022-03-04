@@ -14,15 +14,19 @@
 
         public static ushort[] SUB(byte inA, byte inB, byte outReg)
         {
-            var result = new ushort[7];
+            var result = new ushort[5];
             
             LIR(5, 0xFFFF).CopyTo(result, 0);
             result[2] = XOR(inB, 5, 5);
-            LIR(outReg, 0x0001).CopyTo(result, 3);
-            result[5] = ADD(5, outReg, 5);
-            result[6] = ADD(inA, 5, outReg);
+            result[3] = ADI(5, 1);
+            result[4] = ADD(inA, 5, outReg);
 
             return result;
+        }
+
+        public static ushort ADI(byte reg, byte value)
+        {
+            return (ushort) (0x7000 | (reg << 8) | value & 0xFF);
         }
         
         public static ushort LIL(byte reg, byte value)

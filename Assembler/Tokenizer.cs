@@ -35,7 +35,7 @@ namespace Assembler
         // Return the current line and pointer for error reporting
         public string CurrentLine()
         {
-            return PrintedLineNumber + ":" + _index;
+            return "[" + PrintedLineNumber + ":" + _index + "]";
         }
         
         // Tokenize all lines of the input file
@@ -169,6 +169,11 @@ namespace Assembler
             PreArgument,
             Operand,
             StringPart
+        }
+
+        public void ThrowError(string message)
+        {
+            throw Program.syntax_error(CurrentLine() + " " + message);
         }
     }
 }

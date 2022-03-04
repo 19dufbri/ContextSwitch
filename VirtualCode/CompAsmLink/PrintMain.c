@@ -6,6 +6,18 @@ int main() {
     PrintString("0x");
     PrintHex(ReadMem(result));
     PrintHex(ReadMem(result+1));
+    
+    PrintLine(" ");
+    
+    if (ReadMem(result) == 0x3A07) {
+        if (ReadMem(result+1) == 0x6618) {
+            PrintLine("We're good!");
+        } else {
+            PrintLine("Bad Low Short");
+        }
+    } else {
+        PrintLine("Bad High Short");
+    }
 	return 0x00;
 }
 

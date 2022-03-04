@@ -21,7 +21,9 @@ namespace VirtualMachine
         public VirtualMachine()
         {
 	        _peripherals = new IPeripheral[0x100];
+	        _peripherals[0x00] = new ConsolePeripheral();
 	        _peripherals[0x01] = _peripherals[0x02] = new TimerPeripheral();
+	        _peripherals[0xFF] = new SystemPeripheral();
         }
 
         public void SetMemory(ushort address, ushort data)
@@ -31,17 +33,16 @@ namespace VirtualMachine
 
         private void DoPeripherals()
         {
-	        var found = false;
 	        foreach (var t in _peripherals)
 	        {
 		        var interrupt = t?.RunCycle();
 		        
-		        if (found || !interrupt.HasValue)
+		        if (!interrupt.HasValue)
 			        continue;
-		        found = true;
 		        
 		        DoUndoInt();
 		        _regs[0x0] = interrupt.Value;
+		        break;
 	        }
         }
 

@@ -75,10 +75,10 @@ namespace Assembler
                 result = 0x2000;
 
                 var t = next_num_or_label();
-                if (t.Type == Parse.ParseType.Label)
-                    LabelRef.Add(new Label(t.Name, (ushort) Output.Count, 0xFF, 0));
-                else
+                if (t.Type == Parse.ParseType.Number)
                     result |= (ushort) (t.Number & 0xFF);
+                else
+                    _tokenizer.ThrowError("Expected number");
 
                 result |= (ushort) (expect_reg() << 8);
                 Output.Add(result);
@@ -89,10 +89,10 @@ namespace Assembler
                 result = 0x3000;
 
                 var t = next_num_or_label();
-                if (t.Type == Parse.ParseType.Label)
-                    LabelRef.Add(new Label(t.Name, (ushort) Output.Count, 0xFF, 8));
-                else
+                if (t.Type == Parse.ParseType.Number)
                     result |= (ushort) ((t.Number >> 8) & 0xFF);
+                else
+                    _tokenizer.ThrowError("Expected number");
 
                 result |= (ushort) (expect_reg() << 8);
                 Output.Add(result);
@@ -127,10 +127,10 @@ namespace Assembler
                 result = 0x7000;
 
                 var t = next_num_or_label();
-                if (t.Type == Parse.ParseType.Label)
-                    LabelRef.Add(new Label(t.Name, (ushort) Output.Count, 0xFF, 0));
-                else
+                if (t.Type == Parse.ParseType.Number)
                     result |= (ushort) (t.Number & 0xFF);
+                else
+                    _tokenizer.ThrowError("Expected number");
 
                 result |= (ushort) (expect_reg() << 8);
                 Output.Add(result);
@@ -155,10 +155,10 @@ namespace Assembler
                 result = 0xB000;
 
                 var t = next_num_or_label();
-                if (t.Type == Parse.ParseType.Label)
-                    LabelRef.Add(new Label(t.Name, (ushort) Output.Count, 0xFF, 0));
-                else
+                if (t.Type == Parse.ParseType.Number)
                     result |= (ushort) (t.Number & 0xFF);
+                else
+                    _tokenizer.ThrowError("Expected number");
 
                 result |= (ushort) (expect_reg() << 8);
                 Output.Add(result);
@@ -170,10 +170,10 @@ namespace Assembler
                 result |= (ushort) (expect_reg() << 8);
 
                 var t = next_num_or_label();
-                if (t.Type == Parse.ParseType.Label)
-                    LabelRef.Add(new Label(t.Name, (ushort) Output.Count, 0xFF, 0));
-                else
+                if (t.Type == Parse.ParseType.Number)
                     result |= (ushort) (t.Number & 0xFF);
+                else
+                    _tokenizer.ThrowError("Expected number");
 
                 Output.Add(result);
             }
@@ -245,23 +245,17 @@ namespace Assembler
             else if (token.Equals("LIR"))
             {
                 // LIR ii, r0
-                result = 0x2000;
-
                 var t = next_num_or_label();
-
-                result |= (ushort) (expect_reg() << 8);
+                var register = expect_reg();
 
                 if (t.Type == Parse.ParseType.Label)
                 {
-                    LabelRef.Add(new Label(t.Name, (ushort) Output.Count, 0xFF, 0));
-                    LabelRef.Add(new Label(t.Name, (ushort) (Output.Count + 1), 0xFF, 8));
-                    Output.Add(result);
-                    Output.Add((ushort) (result | 0x1000));
+                    ParseLabelLoad(t, register);
                 }
                 else
                 {
-                    Output.Add((ushort) (result | (t.Number & 0xFF)));
-                    Output.Add((ushort) (result | 0x1000 | ((t.Number >> 8) & 0xFF)));
+                    Output.Add((ushort) (0x2000 | register << 8 | (t.Number & 0xFF)));
+                    Output.Add((ushort) (0x3000 | register << 8 | ((t.Number >> 8) & 0xFF)));
                 }
             }
             else if (token.Equals("JMP"))
@@ -279,8 +273,13 @@ namespace Assembler
                 var type = next_num_or_label();
 
                 Output.Add(0x6570); // MOV PC, R5
-                // ADI ?, R5 (4 if from register, 6 if label or number for hidden LIR)
-                Output.Add((ushort) (type.Type == Parse.ParseType.Reg ? 0x7504 : 0x7506));
+                // ADI ?, R5 (4 if register, 6 if number, 7 if label)
+                Output.Add(type.Type switch
+                {
+                    Parse.ParseType.Label => 0x7507,
+                    Parse.ParseType.Number => 0x7506,
+                    Parse.ParseType.Reg => 0x7504
+                });
                 Output.Add(0x4560); // STO R5, SP
                 Output.Add(0x7601); // ADI 1,  SP
 
@@ -447,7 +446,6 @@ namespace Assembler
 
         private ushort ParseToRegister(Parse value)
         {
-            ushort result;
             ushort register = 0x5;
             switch (value.Type)
             {
@@ -455,16 +453,12 @@ namespace Assembler
                     register = value.Number;
                     break;
                 case Parse.ParseType.Label:
-                    result = 0x2500;
-                    LabelRef.Add(new Label(value.Name, (ushort) Output.Count, 0xFF, 0));
-                    LabelRef.Add(new Label(value.Name, (ushort) (Output.Count + 1), 0xFF, 8));
-                    Output.Add(result);
-                    Output.Add((ushort) (result | 0x1000));
+                    ParseLabelLoad(value, 5);
+                    register = 0x5;
                     break;
                 case Parse.ParseType.Number:
-                    result = 0x2500;
-                    Output.Add((ushort) (result | (value.Number & 0xFF)));
-                    Output.Add((ushort) (result | 0x1000 | ((value.Number >> 8) & 0xFF)));
+                    Output.Add((ushort) (0x2500 | (value.Number & 0xFF)));
+                    Output.Add((ushort) (0x3500 | ((value.Number >> 8) & 0xFF)));
                     break;
                 default:
                     Program.syntax_error("Expected Register, Label, or Number!");
@@ -472,6 +466,16 @@ namespace Assembler
             }
 
             return register;
+        }
+
+        private void ParseLabelLoad(Parse value, byte reg)
+        {
+            if (value.Type != Parse.ParseType.Label)
+                _tokenizer.ThrowError("Expected a label");
+            LabelRef.Add(new Label(value.Name, (ushort) Output.Count, 0xFF, 0));
+            Output.Add((ushort) (0x2000 | reg << 8)); // LIL Low,  %R5
+            Output.Add((ushort) (0x3000 | reg << 8)); // LIH High, %R5
+            Output.Add((ushort) (0x0007 | reg << 8 | reg << 4)); // ADD %R5,  %PC,  %R5
         }
     }
 }

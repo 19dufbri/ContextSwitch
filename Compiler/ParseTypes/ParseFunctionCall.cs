@@ -6,7 +6,7 @@ namespace Compiler.ParseTypes
     public class ParseFunctionCall : ParseStatement
     {
         private readonly string _functionName;
-        private readonly List<ParseRValue> _functionArgs;
+        private readonly List<ParseEqualityExpression> _functionArgs;
 
         public ParseFunctionCall(List<string> tokens)
         {
@@ -21,14 +21,14 @@ namespace Compiler.ParseTypes
             tokens.RemoveAt(0);
         }
         
-        private static List<ParseRValue> GetFunctionArgs(List<string> tokens)
+        private static List<ParseEqualityExpression> GetFunctionArgs(List<string> tokens)
         {
-            var result = new List<ParseRValue>();
+            var result = new List<ParseEqualityExpression>();
             
             var done = tokens.First() == ")";
             while (!done)
             {
-                result.Add(new ParseRValue(tokens));
+                result.Add(new ParseEqualityExpression(tokens));
                 if (tokens.First() != ",")
                     done = true;
                 else

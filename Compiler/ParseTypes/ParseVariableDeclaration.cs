@@ -7,7 +7,7 @@ namespace Compiler.ParseTypes
     {
         private readonly string _datatype;
         private readonly string _name;
-        private readonly ParseRValue _definition;
+        private readonly ParseEqualityExpression _definition;
         
         public ParseVariableDeclaration(List<string> tokens)
         {
@@ -21,7 +21,7 @@ namespace Compiler.ParseTypes
             
             // Includes definition
             tokens.RemoveAt(0);
-            _definition = new ParseRValue(tokens);
+            _definition = new ParseEqualityExpression(tokens);
         }
 
         public override List<string> EmitInstructions()

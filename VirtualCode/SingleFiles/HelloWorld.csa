@@ -1,3 +1,7 @@
+LIR $hellostring, %R0
+LOA %R0, %R0
+IOW %R0, #0xFF
+
 LIR     #0x1000,    %R6 -- Set stack pointer
 
 -- Print 'ABC'
