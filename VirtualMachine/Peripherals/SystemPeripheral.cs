@@ -1,4 +1,4 @@
-﻿namespace VirtualMachine
+﻿namespace VirtualMachine.Peripherals
 {
     public class SystemPeripheral : IPeripheral
     {
@@ -12,12 +12,12 @@
             throw new System.NotImplementedException();
         }
 
-        public void DoWrite(byte addr, ushort value)
+        public void DoWrite(ushort value)
         {
             System.Environment.Exit(value);
         }
 
-        public ushort DoRead(byte addr)
+        public ushort DoRead()
         {
             throw new System.NotImplementedException();
         }

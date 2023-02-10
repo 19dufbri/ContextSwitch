@@ -1,4 +1,4 @@
-﻿namespace VirtualMachine
+﻿namespace VirtualMachine.Peripherals
 {
     public class TimerPeripheral : IPeripheral
     {
@@ -26,22 +26,22 @@
             _isInterrupt = false;
         }
 
-        public void DoWrite(byte addr, ushort value)
+        public void DoWrite(ushort value)
         {
-            switch (addr)
+            switch (value & 0x8000)
             {
-                case 0x00:
+                case 0x0000:
                     // Control register
                     _runTimer = (value & 0x01) == 0x01;
                     break;
-                case 0x01:
+                case 0x8000:
                     // Timescale register
-                    _timeScale = value;
+                    _timeScale = (value & 0x7FFF) << 1;
                     break;
             }
         }
 
-        public ushort DoRead(byte addr)
+        public ushort DoRead()
         {
             return 0x0000;
         }

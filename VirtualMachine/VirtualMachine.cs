@@ -1,4 +1,5 @@
 ﻿using System;
+using VirtualMachine.Peripherals;
 
 namespace VirtualMachine
 {
@@ -23,6 +24,7 @@ namespace VirtualMachine
 	        _peripherals = new IPeripheral[0x100];
 	        _peripherals[0x00] = new ConsolePeripheral();
 	        _peripherals[0x01] = _peripherals[0x02] = new TimerPeripheral();
+	        _peripherals[0x03] = new DisplayPeripheral();
 	        _peripherals[0xFF] = new SystemPeripheral();
         }
 
@@ -121,13 +123,13 @@ namespace VirtualMachine
 				case 0xB: // IOR
 				{
 					var peripheral = _peripherals[opcode & 0xFF];
-					_regs[r0] = (peripheral?.DoRead((byte) (opcode & 0xFF))).GetValueOrDefault(0x0000);
+					_regs[r0] = (peripheral?.DoRead()).GetValueOrDefault(0x0000);
 					break;
 				}
 				case 0xC: // IOW
 				{
 					var peripheral = _peripherals[opcode & 0xFF];
-					peripheral?.DoWrite((byte) (opcode & 0xFF), _regs[r0]);
+					peripheral?.DoWrite(_regs[r0]);
 					break;
 				}
 				case 0xD: // AND

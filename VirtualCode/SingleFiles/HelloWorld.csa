@@ -1,7 +1,3 @@
-LIR $hellostring, %R0
-LOA %R0, %R0
-IOW %R0, #0xFF
-
 LIR     #0x1000,    %R6 -- Set stack pointer
 
 -- Print 'ABC'
@@ -12,14 +8,22 @@ IOW		%R0,	#0x00	-- Print 'B'
 LIR		#0x43,	%R0		-- Load 'C' into R0
 IOW		%R0,	#0x00	-- Print 'C'
 
+JSR     $simplefunction
+
 -- Print a string
 LIR     $hellostring,   %R0 -- String to print
-LIR     $printstring,   %R1 -- Print string routine
-JSR     %R1
+JSR     $printstring        -- Print string routine
 
 -- Exit the program
 LIR     #0x00,  %R0     -- Load exit code into R0
 IOW     %R0,    #0xff   -- Send code to exit port
+
+simplefunction:
+LIR     #0x0D,  %R0
+IOW     %R0,    #0x00
+LIR     #0x0A,  %R0
+IOW     %R0,    #0x00
+RET
 
 -- String to print
 hellostring:

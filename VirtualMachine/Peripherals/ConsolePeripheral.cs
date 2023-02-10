@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace VirtualMachine
+namespace VirtualMachine.Peripherals
 {
     public class ConsolePeripheral : IPeripheral
     {
@@ -14,12 +14,12 @@ namespace VirtualMachine
             throw new NotImplementedException();
         }
 
-        public void DoWrite(byte addr, ushort value)
+        public void DoWrite(ushort value)
         {
             Console.Write((char) value);
         }
 
-        public ushort DoRead(byte addr)
+        public ushort DoRead()
         {
             throw new NotImplementedException();
         }
