@@ -47,6 +47,7 @@ namespace VirtualMachine.Peripherals
             {
                 case 0x0:
                     // Write pixel
+                    // 0b0000 yyxx cccccccc
                     var pixel = (byte) (value & 0xFF);
                     WritePixel(pixel, _xPtr, _yPtr);
                     

@@ -1,0 +1,58 @@
+-- void DisplayPixel(int color, int dx, int dy);
+RoutineDisplayPixel:
+RRO %R6, %R1, #-4   -- color
+RRO %R6, %R2, #-3   -- dx
+RRO %R6, %R3, #-2   -- dy
+LIR #0x0003, %R4
+AND %R2, %R4, %R2
+AND %R3, %R4, %R3
+LIR #0x00FF, %R4
+AND %R1, %R4, %R1
+
+LIR #0x0008, %R4
+PSH %R4
+PSH %R2
+JSR $RoutineRotateLeft
+MOV %R0, %R2
+
+LIR #0x000A, %R4
+PSH %R4
+PSH %R3
+JSR $RoutineRotateLeft
+MOV %R0, %R3
+
+ADD %R1, %R2, %R1
+ADD %R1, %R3, %R1
+
+IOW %R1, #03
+RET
+
+RoutineRotateLeft:
+PSH %R1
+PSH %R2
+PSH %R3
+PSH %R4
+RRO %R6, %R1, #-6 -- Shift
+RRO %R6, %R0, #-7 -- Amount
+
+RotateLeftLoop:
+LIR #0x0000, %R3
+JGT %R3, %R1, $RotateLeftEnd
+ADI #-1, %R1
+LIR #0x8000, %R3
+AND %R3, %R0, %R4
+LIR #-1, %R3
+ADD %R0, %R0, %R0
+JGT %R3, %R4, $RotateLeftAddOne
+JMP $RotateLeftLoop
+
+RotateLeftAddOne:
+ADI #1, %R0
+JMP $RotateLeftLoop
+
+RotateLeftEnd:
+POP %R4
+POP %R3
+POP %R2
+POP %R1
+RET
