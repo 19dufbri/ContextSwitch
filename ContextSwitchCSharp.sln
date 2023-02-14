@@ -1,0 +1,36 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VirtualMachine", "VirtualMachine\VirtualMachine.csproj", "{50DB55C9-E979-46C1-BF0D-C22FD816FA37}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Assembler", "Assembler\Assembler.csproj", "{92902ACD-7CDA-4155-A3A1-9AFD1800080B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Compiler", "Compiler\Compiler.csproj", "{02CB8001-1B5A-4736-A3F6-B8F5311C3E4C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SampleWpfApp", "SampleWpfApp\SampleWpfApp.csproj", "{D5DD3D7D-57F7-4CD2-A2E7-B45DA60A0C6F}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{50DB55C9-E979-46C1-BF0D-C22FD816FA37}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{50DB55C9-E979-46C1-BF0D-C22FD816FA37}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{50DB55C9-E979-46C1-BF0D-C22FD816FA37}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{50DB55C9-E979-46C1-BF0D-C22FD816FA37}.Release|Any CPU.Build.0 = Release|Any CPU
+		{92902ACD-7CDA-4155-A3A1-9AFD1800080B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{92902ACD-7CDA-4155-A3A1-9AFD1800080B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{92902ACD-7CDA-4155-A3A1-9AFD1800080B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{92902ACD-7CDA-4155-A3A1-9AFD1800080B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{02CB8001-1B5A-4736-A3F6-B8F5311C3E4C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{02CB8001-1B5A-4736-A3F6-B8F5311C3E4C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{02CB8001-1B5A-4736-A3F6-B8F5311C3E4C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{02CB8001-1B5A-4736-A3F6-B8F5311C3E4C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D5DD3D7D-57F7-4CD2-A2E7-B45DA60A0C6F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D5DD3D7D-57F7-4CD2-A2E7-B45DA60A0C6F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D5DD3D7D-57F7-4CD2-A2E7-B45DA60A0C6F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D5DD3D7D-57F7-4CD2-A2E7-B45DA60A0C6F}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+	EndGlobalSection
+EndGlobal

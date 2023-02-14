@@ -53,12 +53,8 @@ Module.symvers
 Mkfile.old
 dkms.conf
 *.tgn
-virtual-machine/csa-vm
-compiler/csa-comp
 
 # Editior Files
 .idea/
-*.sln
-*.sln.DotSettings.user
 bin/
 obj/
