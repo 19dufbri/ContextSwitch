@@ -15,23 +15,20 @@ EIN								-- Jump to user code
 OnInterrupt:    -- Every interrupt
 --BRK
 LIR 	#0x00,			%R2		-- Check if user
-LIR		$TimerInt,		%R1
-JGT     %R2,    %R0,    %R1     -- 0 < Int, eg Skip if user interrupt
+JGT     %R2,    %R0,    $TimerInt     -- 0 < Int, eg Skip if user interrupt
 
 -- User Interrupt
 -- Print out "I" for user interrupt
 UserInt:
 LIR		#0x49,	%R0			-- 'I'
 IOW		%R0,		#0x00
-LIR		$EndISR,	%R1
-JMP 	%R1
 
 EndISR:
 EIN
+
 StartISR:
 -- Go back to interrupt handler
-LIR		$OnInterrupt, 	%R1
-JMP 	%R1
+JMP 	$OnInterrupt
 
 TimerInt:
 -- Print out "\nT\n" for timer
@@ -41,15 +38,12 @@ LIR		#0x54,	%R0			-- 'T'
 IOW		%R0,	#0x00
 LIR		#0x0A,	%R0			-- '\n'
 IOW		%R0,	#0x00
-LIR		$EndISR,	%R1
-JMP 	%R1
+JMP 	$EndISR
 
 -- User code
 User:
-LIR		$UserLoop,	%R1
-
 UserLoop:
 LIR		#0x55,	%R0			-- 'U'
 IOW		%R0,	#0x00
 INT
-JMP 	%R1
+JMP 	$UserLoop

@@ -38,4 +38,4 @@ POP		%R1
 RET
 
 data:	-- String to print
-."Pussy, Dick, AND Cum"
+."Hello World!"
