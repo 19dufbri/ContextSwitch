@@ -23,8 +23,8 @@ namespace VirtualMachine
         {
 	        _peripherals = new IPeripheral[0x100];
 	        _peripherals[0x00] = new ConsolePeripheral();
-	        _peripherals[0x01] = _peripherals[0x02] = new TimerPeripheral();
-	        _peripherals[0x03] = new DisplayPeripheral();
+	        _peripherals[0x01] = new TimerPeripheral();
+	        _peripherals[0x02] = new DisplayPeripheral();
 	        _peripherals[0xFF] = new SystemPeripheral();
         }
 
@@ -87,7 +87,6 @@ namespace VirtualMachine
 					_regs[r0] = (ushort) (_regs[r1] + _regs[r2]);
 					break;
 				case 0x1: // Unused
-					_regs[r0] = (ushort) (_regs[r1] - _regs[r2]);
 					break;
 				case 0x2: // LIL - Load Immediate Low
 					_regs[r0] &= 0xFF00;
